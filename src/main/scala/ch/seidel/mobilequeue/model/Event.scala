@@ -9,7 +9,7 @@ case class Event
   @(ApiModelProperty @field)(value = "unique identifier for the event")
   id: Long,
   @(ApiModelProperty @field)(value = "unique identifier for the event")
-  uiserid: Long,
+  userid: Long,
   @(ApiModelProperty @field)(value = "title for the event")
   eventTitle: String,
   @(ApiModelProperty @field)(value = "date for the event")

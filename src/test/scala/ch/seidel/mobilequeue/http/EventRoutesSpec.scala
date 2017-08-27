@@ -87,7 +87,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"{"event":{"id":1,"userid":1,"eventTitle":"Testevent","date":"30. Nov 2018"},"description":"Event 1 deleted."}""")
+        entityAs[String] should ===("""{"event":{"id":1,"userid":1,"eventTitle":"Testevent","date":"30. Nov 2018"},"description":"Event 1 deleted."}""")
       }
     }
     //#actual-test
