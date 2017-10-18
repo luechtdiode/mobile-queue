@@ -3,7 +3,7 @@ package ch.seidel.mobilequeue.http
 import akka.http.scaladsl.model.ws.TextMessage
 import akka.http.scaladsl.server.Directives
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import scala.concurrent.forkjoin.ThreadLocalRandom
+import java.util.concurrent.ThreadLocalRandom
 
 trait WebSockets extends Directives {
 
