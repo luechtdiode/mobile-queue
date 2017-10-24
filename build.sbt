@@ -2,8 +2,8 @@ name := "Akka-Http-Rest-Websocket-Swagger-Angular-Example"
 
 version := "0.1"
 
-lazy val akkaHttpVersion = "10.0.9"
-lazy val akkaVersion    = "2.5.3"
+lazy val akkaHttpVersion = "10.0.10"
+lazy val akkaVersion    = "2.5.4"
 
 lazy val root = (project in file(".")).
   settings(
@@ -17,6 +17,8 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-xml"        % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-stream"          % akkaVersion,
+      "com.typesafe.akka" %% "akka-cluster"         % akkaVersion,
+  	  "com.typesafe.akka" %% "akka-cluster-tools"   % akkaVersion,
 
       "com.typesafe.akka" %% "akka-http-testkit"    % akkaHttpVersion    % Test,
       "org.scalatest"     %% "scalatest"            % "3.0.1"            % Test,

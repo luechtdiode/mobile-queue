@@ -17,23 +17,21 @@ import com.typesafe.config.ConfigFactory
 
 import ch.seidel.mobilequeue.akka._
 
-trait Core {
-  implicit def system: ActorSystem
-}
-
-trait BootedCore extends Core {
-
+object Core {
   /**
     * Construct the ActorSystem we will use in our application
     */
   implicit lazy val system = ActorSystem("mobileQueueHttpServer")
-
   // Needed for the Future and its methods flatMap/onComplete in the end
   implicit val executionContext: ExecutionContext = system.dispatcher
-
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
   val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
   val eventRegistryActor: ActorRef = system.actorOf(EventRegistryActor.props, "eventRegistryActor")
-  val ticketRegistryActor: ActorRef = system.actorOf(TicketRegistryActor.props, "ticketRegistryActor")
+
+}
+
+trait BootedCore {
+  import Core._
 
   /**
     * Ensure that the constructed ActorSystem is shut down when the JVM shuts down

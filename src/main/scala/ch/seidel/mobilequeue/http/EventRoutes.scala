@@ -20,16 +20,11 @@ import scala.concurrent.Future
 import ch.seidel.mobilequeue.akka.EventRegistryActor._
 import ch.seidel.mobilequeue.model._
 import akka.actor.ActorLogging
+import ch.seidel.mobilequeue.app.Core._
 
 //#event-routes-class
 trait EventRoutes extends JsonSupport with RouterLogging {
   //#event-routes-class
-
-  // we leave these abstract, since they will be provided by the App
-  implicit def system: ActorSystem
-
-  // other dependencies that EventRoutes use
-  def eventRegistryActor: ActorRef
 
   // Required by the `ask` (?) method below
   private implicit lazy val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration

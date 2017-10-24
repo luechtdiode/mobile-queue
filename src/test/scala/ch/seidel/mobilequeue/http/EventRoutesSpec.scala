@@ -21,6 +21,7 @@ import ch.seidel.mobilequeue.http._
 import ch.seidel.mobilequeue.model._
 
 import io.swagger.annotations.ApiModel
+import ch.seidel.mobilequeue.app.Core._
 
 //#set-up
 @RunWith(classOf[JUnitRunner])
@@ -28,11 +29,6 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
     with EventRoutes {
   //#test-top
 
-  // Here we need to implement all the abstract members of EventRoutes.
-  // We use the real EventRegistryActor to test it while we hit the Routes, 
-  // but we could "mock" it by implementing it in-place or by using a TestProbe() 
-  override val eventRegistryActor: ActorRef =
-    system.actorOf(EventRegistryActor.props, "eventRegistry")
 
   lazy val routes = eventRoutes
 

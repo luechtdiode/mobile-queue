@@ -24,17 +24,13 @@ import ch.seidel.mobilequeue.akka.UserRegistryActor._
 import ch.seidel.mobilequeue.model._
 import akka.actor.ActorLogging
 
+import ch.seidel.mobilequeue.app.Core._
+
 //#user-routes-class
 @Api(value = "/users", produces = "application/json", description = "Operations on users")
 @Path("/users")
 trait UserRoutes extends JsonSupport with RouterLogging {
   //#user-routes-class
-
-  // we leave these abstract, since they will be provided by the App
-  implicit def system: ActorSystem
-
-  // other dependencies that UserRoutes use
-  def userRegistryActor: ActorRef
 
   // Required by the `ask` (?) method below
   private implicit lazy val timeout = Timeout(5.seconds) // usually we'd obtain the timeout from the system's configuration

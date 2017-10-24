@@ -8,9 +8,9 @@ import com.github.swagger.akka.SwaggerHttpService
 import com.github.swagger.akka.SwaggerHttpService
 
 import ch.seidel.mobilequeue.app.Config
+import ch.seidel.mobilequeue.app.Core._
 
 trait SwaggerDocService extends SwaggerHttpService with RouterLogging with Config {
-  implicit val materializer: ActorMaterializer
   override val apiClasses = Set(classOf[UserRoutes])//, classOf[EventRoutes], classOf[TicketRoutes]
   override val host = s"${httpInterface}:${httpPort}" //the url of your api, not swagger's json endpoint
   override val basePath = "/"    //the basePath for the API you are exposing

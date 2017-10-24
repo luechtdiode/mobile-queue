@@ -10,6 +10,8 @@ final case class User
   id: Long,
   @(ApiModelProperty @field)(value = "name of the user")
   name: String,
+  @(ApiModelProperty @field)(value = "password of the user")
+  password: String,
   @(ApiModelProperty @field)(value = "email of the user")
   mail: String,
   @(ApiModelProperty @field)(value = "mobile-phone of the user")

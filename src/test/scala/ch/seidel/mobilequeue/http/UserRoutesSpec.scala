@@ -21,6 +21,7 @@ import ch.seidel.mobilequeue.http._
 import ch.seidel.mobilequeue.model._
 
 import io.swagger.annotations.ApiModel
+import ch.seidel.mobilequeue.app.Core._
 
 //#set-up
 @RunWith(classOf[JUnitRunner])
@@ -31,8 +32,6 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
   // Here we need to implement all the abstract members of UserRoutes.
   // We use the real UserRegistryActor to test it while we hit the Routes, 
   // but we could "mock" it by implementing it in-place or by using a TestProbe() 
-  override val userRegistryActor: ActorRef =
-    system.actorOf(UserRegistryActor.props, "userRegistry")
 
   lazy val routes = userRoutes
 
@@ -58,7 +57,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
     //#testing-post
     "be able to add users (POST /users)" in {
-      val user = User(0, "Testuser", "test@test.ch", "00411234556")
+      val user = User(0, "Testuser", "password", "test@test.ch", "00411234556")
       val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:
@@ -71,7 +70,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and we know what message we're expecting back:
-        entityAs[String] should ===("""{"user":{"id":1,"name":"Testuser","mail":"test@test.ch","mobile":"00411234556"},"description":"User Testuser with id 1 created."}""")
+        entityAs[String] should ===("""{"user":{"name":"Testuser","id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User Testuser with id 1 created."}""")
       }
     }
     //#testing-post
@@ -87,7 +86,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"user":{"id":1,"name":"Testuser","mail":"test@test.ch","mobile":"00411234556"},"description":"User 1 deleted."}""")
+        entityAs[String] should ===("""{"user":{"name":"Testuser","id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User 1 deleted."}""")
       }
     }
     //#actual-test
@@ -103,7 +102,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"user":{"id":34,"name":"not existing!","mail":"","mobile":""},"description":"User 34 deleted."}""")
+        entityAs[String] should ===("""{"user":{"name":"not existing!","id":34,"mail":"","mobile":"","password":"***"},"description":"User 34 deleted."}""")
       }
     }
     //#actual-test
