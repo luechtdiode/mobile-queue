@@ -30,8 +30,8 @@
 				if (evt.data === 'keepAlive') {
 					return;
 				}
-				if (connected && (!deviceId || deviceId === '')) {
-					setDeviceId(evt.data);
+				if (connected && (!deviceId || deviceId === '' && evt.data.startsWith('deviceId='))) {
+					setDeviceId(evt.data.split('=')[1]);
 				}
 				connected = true;
 				try {

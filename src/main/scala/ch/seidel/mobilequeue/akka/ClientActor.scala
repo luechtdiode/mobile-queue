@@ -100,7 +100,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     case UserActionPerformed(authenticatedUser, _) =>
       println("user authenticated: " + authenticatedUser)
       user = Some(authenticatedUser)
-      wsSend.foreach(_ ! TextMessage(authenticatedUser.deviceIds.head))
+      wsSend.foreach(_ ! TextMessage("deviceId="+authenticatedUser.deviceIds.head))
       context.become(authenticated)
 
     case ClientActor.Stop =>
