@@ -57,7 +57,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
     //#testing-post
     "be able to add users (POST /users)" in {
-      val user = User(0, "Testuser", "password", "test@test.ch", "00411234556")
+      val user = User(0, Seq("1"), "Testuser", "password", "test@test.ch", "00411234556")
       val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:
@@ -70,7 +70,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and we know what message we're expecting back:
-        entityAs[String] should ===("""{"user":{"name":"Testuser","id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User Testuser with id 1 created."}""")
+        entityAs[String] should ===("""{"user":{"name":"Testuser","deviceIds":["1"],"id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User Testuser with id 1 created."}""")
       }
     }
     //#testing-post
@@ -86,7 +86,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"user":{"name":"Testuser","id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User 1 deleted."}""")
+        entityAs[String] should ===("""{"user":{"name":"Testuser","deviceIds":["1"],"id":1,"mail":"test@test.ch","mobile":"00411234556","password":"***"},"description":"User 1 deleted."}""")
       }
     }
     //#actual-test
@@ -102,7 +102,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"user":{"name":"not existing!","id":34,"mail":"","mobile":"","password":"***"},"description":"User 34 deleted."}""")
+        entityAs[String] should ===("""{"user":{"name":"not existing!","deviceIds":[],"id":34,"mail":"","mobile":"","password":"***"},"description":"User 34 deleted."}""")
       }
     }
     //#actual-test

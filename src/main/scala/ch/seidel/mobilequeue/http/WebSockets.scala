@@ -9,19 +9,10 @@ import ch.seidel.mobilequeue.akka.ClientActorSupervisor
 
 trait WebSockets extends Directives {
  
+  
   def websocket = {
     path("ticketTrigger") {
-      extractRequest { request =>
-        complete(
-          request.header[UpgradeToWebSocket] match {
-            case Some(upgrade) =>
-              ClientActorSupervisor.createClient().map { sinkSource =>
-                upgrade.handleMessagesWithSinkSource(sinkSource.sink, sinkSource.source)
-              }
-            case None => HttpResponse(400, entity = "Not a valid websocket request!")
-          }
-        )
-      }
+      handleWebSocketMessages(ClientActorSupervisor.createFlow)
     }
   }
 }

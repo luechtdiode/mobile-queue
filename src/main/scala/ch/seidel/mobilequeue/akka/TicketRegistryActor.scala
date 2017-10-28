@@ -5,6 +5,7 @@ import akka.actor.actorRef2Scala
 
 import ch.seidel.mobilequeue.model._
 import akka.actor.ActorRef
+import akka.actor.Terminated
 
 object TicketRegistryActor {
   sealed trait TicketRegistryMessage
@@ -42,6 +43,7 @@ class TicketRegistryActor extends Actor with ActorLogging {
       val newId = tickets.keys.foldLeft(0L)((acc, ticket) => {math.max(ticket.id, acc)}) + 1L
       val ticketWithId = ticket.copy(id = newId)
       tickets = tickets + (ticketWithId -> clientActor)
+      context.watch(clientActor)
       sender() ! ActionPerformed(ticketWithId, s"Ticket ${newId} created.")
       
     case GetTicket(id) =>
@@ -55,5 +57,15 @@ class TicketRegistryActor extends Actor with ActorLogging {
         case _ =>
       }      
       sender() ! ActionPerformed(toDelete, s"Ticket ${id} deleted.")
+    
+    case Terminated(clientActor) =>
+      tickets
+        .filter(pair => pair._2 == clientActor)
+        .map(_._1)
+        .foreach{event =>
+          println("removing ticket for " + clientActor)
+          tickets -= event
+        }
+      
   }
 }

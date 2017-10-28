@@ -8,6 +8,8 @@ final case class User
 (
   @(ApiModelProperty @field)(value = "unique identifier for the user")
   id: Long,
+  @(ApiModelProperty @field)(value = "unique identifier for the user's devices")
+  deviceIds: Seq[String],
   @(ApiModelProperty @field)(value = "name of the user")
   name: String,
   @(ApiModelProperty @field)(value = "password of the user")
@@ -17,6 +19,10 @@ final case class User
   @(ApiModelProperty @field)(value = "mobile-phone of the user")
   mobile: String
 )
+
+//object User {
+//  def apply(id: Long, deviceId: String, name: String): User = User(id, Seq(deviceId), name, "", "", "")
+//}
 
 @ApiModel(description = "A List of user object")
 final case class Users(users: Seq[User])

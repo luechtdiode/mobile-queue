@@ -2,29 +2,151 @@
 <head>
     <title>WebSocket Echo Test</title>
     <script>
-            function init() {
-            websocket = new WebSocket("ws://localhost:8080/ticketTrigger");
+    	var deviceId;
+    	var username;
+    	var connected = false;
+        var tickets = {};
+        
+        function connect(message) {
+			websocket = new WebSocket("ws://localhost:8080/ticketTrigger");
+			websocket.onopen = function() {
+				document.getElementById("output").innerHTML = "<p>> CONNECTED</p>";
+				document.getElementById("login").disabled = false;
+				var un = getUsername();
+				if (deviceId && deviceId !== '' && !connected && un && un !== '') {
+					sayHello(getUsername());
+				}
+				if (message) {
+					sendMessage(message);
+				}
+			};
+			websocket.onclose = function() {
+				document.getElementById("login").disabled = false;
+				document.getElementById("output").innerHTML += "<p>> DISCONNECTED</p>";
+				websocket = undefined;
+				connected = false;
+			};
+			websocket.onmessage = function(evt) {
+				if (evt.data === 'keepAlive') {
+					return;
+				}
+				if (connected && (!deviceId || deviceId === '')) {
+					setDeviceId(evt.data);
+				}
+				connected = true;
+				try {
+					var description = JSON.parse(evt.data)['description'];
+					if (description.indexOf('called')>-1) {
+						document.getElementById("subscribe").disabled = false;
+						document.getElementById("unsubscribe").disabled = true;					
+						document.getElementById("output").innerHTML = 
+							  "<h1 style='color: green;'>It's time to go!</h1>"
+						    + "<h2 style='color: green;>We expect You in the next 10 minutes to start with Your Event!" + "</h2>";
+					} else {
+						document.getElementById("output").innerHTML = "<p style='color: blue;'>> RESPONSE: "
+							+ description + "</p>";
+					}
+ 				} catch(e) {
+ 					document.getElementById("output").innerHTML = "<p style='color: blue;'>> RESPONSE: "
+						+ evt.data + "</p>";
+ 				}
+			};
 
-            websocket.onopen = function() { document.getElementById("output").innerHTML += "<p>> CONNECTED</p>"; };
+			websocket.onerror = function(evt) {
+				document.getElementById("output").innerHTML += "<p style='color: red;'>> ERROR: "
+						+ evt.data + "</p>";
+			};
+        }
+        
+        function disconnectWS() {
+        	websocket.close();
+        }
+        
+        function setUsername(n) {
+        	username = n;
+        	if (typeof(Storage) !== "undefined") {
+			    localStorage.username = n;
+			}			
+        }
+        
+        function getUsername() {
+        	if (typeof(Storage) !== "undefined") {
+        		username = localStorage.username;
+			}
+			if (!username) {
+				username = '';
+			}
+			return username;
+        }
+        function setDeviceId(id) {
+        	connected = true;
+        	if (typeof(Storage) !== "undefined") {
+			    localStorage.deviceId = id;
+			}			
+        }
+        
+        function getDeviceId() {
+        	if (typeof(Storage) !== "undefined") {
+			    deviceId = localStorage.deviceId;
+			}
+			if (!deviceId) {
+				deviceId = '';
+			}
+			return deviceId;
+        }
+		function init() {
+			console.log('init');
+			document.getElementById("username").value = getUsername();
+			getDeviceId();
+			connect();
+		}
 
-            websocket.onmessage = function(evt) { document.getElementById("output").innerHTML += "<p style='color: blue;'>> RESPONSE: " + evt.data + "</p>"; };
+		function sayHello(name) {
+			setUsername(name);
+			sendMessage(JSON.stringify({
+		    	'type' : 'HelloImOnline', 
+		    	'username' : name, 
+		    	'deviceId' : deviceId
+		    }));
+			document.getElementById("login").disabled = true;
+		}
+		function subscribeEvent(name) {
+			sendMessage(JSON.stringify({
+		    	'type' : 'Subscribe', 
+		    	'channel' : parseInt(name)
+		    }));
+			document.getElementById("subscribe").disabled = true;
+			document.getElementById("unsubscribe").disabled = false;
+		}
+		function unsubscribeEvent(name) {
+			sendMessage(JSON.stringify({
+		    	'type' : 'UnSubscribe', 
+		    	'channel' : parseInt(name)
+		    }));
+			document.getElementById("subscribe").disabled = false;
+			document.getElementById("unsubscribe").disabled = true;
+		}
+		function sendMessage(message) {
+			if (!websocket) {
+				connect(message);
+			} else {
+				websocket.send(message);
+				document.getElementById("output").innerHTML += "<p>> SENT: "
+					+ message + "</p>";
+			}
+		}
 
-            websocket.onerror = function(evt) { document.getElementById("output").innerHTML += "<p style='color: red;'>> ERROR: " + evt.data + "</p>"; };
-            }
-
-            function sendMessage(message) {
-            document.getElementById("output").innerHTML += "<p>> SENT: " + message + "</p>";
-
-            websocket.send(message);
-            }
-
-            window.addEventListener("load", init, false);
-        </script>
+		window.addEventListener("load", init, false);
+	</script>
 </head>
 <body>
 <form>
-    <input type="text" name="test" />
-    <button onclick="sendMessage(test.value); test.value = null; return false;">Send</button>
+    <input type="text" id="username" name="username" placeholder="Your Name please" />
+    <button id="login" onclick="sayHello(username.value); return false;">Login</button>
+    <input type="text" name="test" placeholder="event-identification"/>
+    <button id="subscribe" onclick="subscribeEvent(test.value); return false;">Get me a ticket</button>
+    <button id="unsubscribe" onclick="unsubscribeEvent(test.value); return false;">Take my ticket back</button>
+    <button id="disconnect" onclick="disconnectWS(); return false;">Disconnect</button>
 </form>
 <hr>
 <div id="output"></div>

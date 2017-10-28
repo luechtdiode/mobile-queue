@@ -70,9 +70,9 @@ class EventRegistryActor extends Actor with ActorLogging {
         }
       )
     case GetEventTicket(eventId: Long, id: Long) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(GetTicket)))
+      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(GetTicket(id))))
     case DeleteEventTicket(eventId: Long, id: Long) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(DeleteTicket)))
+      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(DeleteTicket(id))))
       
     case Terminated(tickets) =>
       eventActors
