@@ -1,9 +1,9 @@
 package ch.seidel.mobilequeue.http
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed}
-import ch.seidel.mobilequeue.akka.EventRegistryActor.{ ActionPerformed => EventActionPerformed}
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketTicketActionPerformed}
+import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed }
+import ch.seidel.mobilequeue.akka.EventRegistryActor.{ ActionPerformed => EventActionPerformed }
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketTicketActionPerformed }
 import spray.json._
 import ch.seidel.mobilequeue.model._
 import spray.json.JsonReader
@@ -27,29 +27,26 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val eventActionPerformedJsonFormat = jsonFormat2(EventActionPerformed)
   implicit val ticketActionPerformedJsonFormat = jsonFormat2(TicketTicketActionPerformed)
 
-//  implicit val registerFormat = jsonFormat1(Register)
-//  implicit val loginFormat = jsonFormat2(LogIn)
+  //  implicit val registerFormat = jsonFormat1(Register)
+  //  implicit val loginFormat = jsonFormat2(LogIn)
   implicit val helloFormat = jsonFormat2(HelloImOnline)
   implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)
   implicit val ticketCalledFormat = jsonFormat2(TicketCalled)
   implicit val summaryFormat = jsonFormat1(InvokedTicketsSummary)
- 
-  val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(      
-        classOf[HelloImOnline].getSimpleName -> helloFormat
-//      , classOf[Register].getSimpleName -> registerFormat
-//      , classOf[LogIn].getSimpleName -> loginFormat
-      , classOf[Subscribe].getSimpleName -> subscribeFormat
-      , classOf[UnSubscribe].getSimpleName -> unsubscribeFormat
-      , classOf[TicketCalled].getSimpleName -> ticketCalledFormat
-      )
-  
+
+  val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(
+    classOf[HelloImOnline].getSimpleName -> helloFormat //      , classOf[Register].getSimpleName -> registerFormat
+    //      , classOf[LogIn].getSimpleName -> loginFormat
+    , classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat
+  )
+
   implicit val messagesFormat: JsonReader[PubSub] = { json =>
     json.asOpt[JsObject].flatMap(_.fields.get("type").flatMap(_.asOpt[String])).map(caseClassesJsonReader) match {
-      case Some(jsonReader) => 
+      case Some(jsonReader) =>
         val plain = json.withoutFields("type")
         val ret = jsonReader.read(plain)
-//        println(ret)
+        //        println(ret)
         ret
       case _ => throw new Exception(s"Unable to parse $json to PubSub")
     }

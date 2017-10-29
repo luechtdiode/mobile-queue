@@ -19,8 +19,8 @@ import ch.seidel.mobilequeue.akka._
 
 object Core {
   /**
-    * Construct the ActorSystem we will use in our application
-    */
+   * Construct the ActorSystem we will use in our application
+   */
   implicit lazy val system = ActorSystem("mobileQueueHttpServer")
   // Needed for the Future and its methods flatMap/onComplete in the end
   implicit val executionContext: ExecutionContext = system.dispatcher
@@ -34,8 +34,8 @@ trait BootedCore {
   import Core._
 
   /**
-    * Ensure that the constructed ActorSystem is shut down when the JVM shuts down
-    */
+   * Ensure that the constructed ActorSystem is shut down when the JVM shuts down
+   */
   sys.addShutdownHook(shutDown())
 
   def shutDown() {

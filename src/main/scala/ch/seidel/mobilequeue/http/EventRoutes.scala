@@ -43,63 +43,63 @@ trait EventRoutes extends JsonSupport with RouterLogging {
             (eventRegistryActor ? GetEvents).mapTo[Events]
           complete(events)
         } ~
-        post {
-          entity(as[Event]) { event =>
-            val eventCreated: Future[ActionPerformed] =
-              (eventRegistryActor ? CreateEvent(event)).mapTo[ActionPerformed]
-            onSuccess(eventCreated) { performed =>
-              log.info("Created event [{}]: {}", performed.event, performed.description)
-              complete((StatusCodes.Created, performed))
+          post {
+            entity(as[Event]) { event =>
+              val eventCreated: Future[ActionPerformed] =
+                (eventRegistryActor ? CreateEvent(event)).mapTo[ActionPerformed]
+              onSuccess(eventCreated) { performed =>
+                log.info("Created event [{}]: {}", performed.event, performed.description)
+                complete((StatusCodes.Created, performed))
+              }
             }
           }
-        }
-      
+
       } ~
-      //#events-get-post
-      //#events-get-delete
-      path(LongNumber) { id =>
-        pathEnd {
-          get {
-            //#retrieve-event-info
-            val maybeEvent: Future[Option[Event]] =
-              (eventRegistryActor ? GetEvent(id)).mapTo[Option[Event]]
-            rejectEmptyResponse {
-              complete(maybeEvent)
-            }
-            //#retrieve-event-info
-          } ~
-          delete {
-            //#events-delete-logic
-            val eventDeleted: Future[ActionPerformed] =
-              (eventRegistryActor ? DeleteEvent(id)).mapTo[ActionPerformed]
-            onSuccess(eventDeleted) { performed =>
-              log.info("Deleted event [{}]: {}", id, performed.description)
-              complete((StatusCodes.OK, performed))
-            }
-            //#events-delete-logic
+        //#events-get-post
+        //#events-get-delete
+        path(LongNumber) { id =>
+          pathEnd {
+            get {
+              //#retrieve-event-info
+              val maybeEvent: Future[Option[Event]] =
+                (eventRegistryActor ? GetEvent(id)).mapTo[Option[Event]]
+              rejectEmptyResponse {
+                complete(maybeEvent)
+              }
+              //#retrieve-event-info
+            } ~
+              delete {
+                //#events-delete-logic
+                val eventDeleted: Future[ActionPerformed] =
+                  (eventRegistryActor ? DeleteEvent(id)).mapTo[ActionPerformed]
+                onSuccess(eventDeleted) { performed =>
+                  log.info("Deleted event [{}]: {}", id, performed.description)
+                  complete((StatusCodes.OK, performed))
+                }
+                //#events-delete-logic
+              }
           }
-        }
-      } ~
-      path(LongNumber / "accepted") { id =>
-        get {
-          val maybeEvent: Future[InvokedTicketsSummary] =
-            (eventRegistryActor ? GetEventAccepted(id)).mapTo[InvokedTicketsSummary]
-          rejectEmptyResponse {
-            complete(maybeEvent)
-          }
-        }          
-      } ~
-      path(LongNumber / IntNumber) {(id, cnt) => 
-        pathEnd {
+        } ~
+        path(LongNumber / "accepted") { id =>
           get {
             val maybeEvent: Future[InvokedTicketsSummary] =
-              (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[InvokedTicketsSummary]
+              (eventRegistryActor ? GetEventAccepted(id)).mapTo[InvokedTicketsSummary]
             rejectEmptyResponse {
               complete(maybeEvent)
             }
           }
+        } ~
+        path(LongNumber / IntNumber) { (id, cnt) =>
+          pathEnd {
+            get {
+              val maybeEvent: Future[InvokedTicketsSummary] =
+                (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[InvokedTicketsSummary]
+              rejectEmptyResponse {
+                complete(maybeEvent)
+              }
+            }
+          }
         }
-      }
       //#events-get-delete
     }
   }

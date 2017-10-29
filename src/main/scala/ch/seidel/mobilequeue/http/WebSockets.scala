@@ -8,8 +8,7 @@ import akka.http.scaladsl.server.Directives
 import ch.seidel.mobilequeue.akka.ClientActorSupervisor
 
 trait WebSockets extends Directives {
- 
-  
+
   def websocket = {
     path("ticketTrigger") {
       handleWebSocketMessages(ClientActorSupervisor.createFlow)

@@ -1,4 +1,4 @@
-name := "Akka-Http-Rest-Websocket-Swagger-Angular-Example"
+name := "mobile-queue"
 
 version := "0.1"
 

@@ -22,7 +22,7 @@ object EventRegistryActor {
   final case class CreateEvent(event: Event) extends EventRegistryMessage
   final case class GetEvent(id: Long) extends EventRegistryMessage
   final case class DeleteEvent(id: Long) extends EventRegistryMessage
-  
+
   final case class GetEventTickets(eventId: Long) extends EventRegistryMessage
   final case class GetNextEventTickets(eventId: Long, cnt: Int) extends EventRegistryMessage
   final case class GetEventAccepted(eventId: Long) extends EventRegistryMessage
@@ -35,80 +35,78 @@ object EventRegistryActor {
 class EventRegistryActor extends Actor with ActorLogging {
   import EventRegistryActor._
   import context._
-  
+
   def operateWith(ticketsForEventActors: Map[Event, ActorRef], events: Map[Long, Event]): Receive = {
 
     // events crud
     case GetEvents =>
       sender() ! Events(ticketsForEventActors.keys.toSeq)
-      
+
     case CreateEvent(event) =>
-      val withId = event.copy(id = events.foldLeft(0L)((acc, event) => {math.max(event._1, acc)}) + 1L)
+      val withId = event.copy(id = events.foldLeft(0L)((acc, event) => { math.max(event._1, acc) }) + 1L)
       val tickets = context.actorOf(TicketRegistryActor.props, s"${TicketRegistryActor.name}-${withId.id}")
       watch(tickets)
       become(operateWith(ticketsForEventActors + (withId -> tickets), events + (withId.id -> withId)))
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")
-      
+
     case GetEvent(id) =>
       sender() ! events.get(id)
-      
+
     case DeleteEvent(id) =>
       val toDelete = events.get(id).getOrElse(Event(id, 0, "not existing!", ""))
       toDelete match {
-        case Event(id,_,_,_) if (id > 0) =>
+        case Event(id, _, _, _) if (id > 0) =>
           ticketsForEventActors.get(toDelete).foreach(_ ! PoisonPill)
           become(operateWith(ticketsForEventActors - toDelete, events - id))
         case _ =>
-      }      
+      }
       sender() ! ActionPerformed(toDelete, s"Event ${id} deleted.")
-      
-    case GetEventTickets(eventId: Long) => 
+
+    case GetEventTickets(eventId: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTickets)))
-      
+
     // event routing to ticket actors
-    case GetNextEventTickets(eventId: Long, cnt: Int) => 
+    case GetNextEventTickets(eventId: Long, cnt: Int) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetNextTickets(cnt))))
-      
-    case CreateEventTicket(ticket, cnt, clientActor) => 
+
+    case CreateEventTicket(ticket, cnt, clientActor) =>
       events.get(ticket.eventid).foreach(event =>
-        ticketsForEventActors.get(event).foreach{ ticketingActor =>
+        ticketsForEventActors.get(event).foreach { ticketingActor =>
           ticketingActor.forward(CreateTicket(ticket, cnt, clientActor))
-        }
-      )
+        })
     case GetEventAccepted(eventId) =>
       events.get(eventId).foreach(event =>
-        ticketsForEventActors.get(event).foreach{ ticketingActor =>
+        ticketsForEventActors.get(event).foreach { ticketingActor =>
           ticketingActor.forward(GetAccepted)
-        }
-      )
+        })
 
     // broadcast to all other connected clients of the same user
     case tc @ TicketCreated =>
       ticketsForEventActors.values
         .filter(_ != sender)
         .foreach(_.forward(tc))
-      
-    case GetEventTicket(eventId: Long, id: Long) => 
+
+    case GetEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTicket(id))))
-      
-    case DeleteEventTicket(eventId: Long, id: Long) => 
+
+    case DeleteEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(DeleteTicket(id))))
-    
+
     // supervision of connected clients
     case connected @ ClientConnected =>
       ticketsForEventActors.values.foreach(_.forward(connected))
-      
+
     // supervision of child-actors (tickets per event)
     case Terminated(tickets) =>
       unwatch(tickets)
       val (tkts, evts) = ticketsForEventActors
         .filter(pair => pair._2 == tickets)
         .map(_._1)
-        .foldLeft((ticketsForEventActors, events)){(acc, toDelete) =>
+        .foldLeft((ticketsForEventActors, events)) { (acc, toDelete) =>
           (ticketsForEventActors - toDelete, events - toDelete.id)
         }
-     become(operateWith(tkts, evts))
+      become(operateWith(tkts, evts))
   }
-  
+
   def receive = operateWith(Map.empty[Event, ActorRef], Map.empty[Long, Event])
 }
