@@ -9,7 +9,8 @@
         var confirmData;
         
         function connect(message) {
-			websocket = new WebSocket("ws://localhost:8080/ticketTrigger");
+        	var host = location.host;
+			websocket = new WebSocket("ws://" + location.host + "/ticketTrigger");
 			websocket.onopen = function() {
 				document.getElementById("output").innerHTML = "<p>> CONNECTED</p>";
 				document.getElementById("login").disabled = false;
