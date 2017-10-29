@@ -1,35 +1,27 @@
 package ch.seidel.mobilequeue.akka
 
-import scala.concurrent.Future
-import akka.actor.{Actor, ActorRef}
-import akka.pattern.ask
-import akka.util.Timeout
-import scala.concurrent.duration._
-import scala.concurrent.Future
-
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.stream.{Graph, OverflowStrategy, SinkShape}
-import spray.json._
-import ch.seidel.mobilequeue.model._
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.CreateTicket
-import ch.seidel.mobilequeue.akka.EventRegistryActor.{ActionPerformed => EventActionPerformed}
-import ch.seidel.mobilequeue.akka.UserRegistryActor.{ActionPerformed => UserActionPerformed}
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ActionPerformed => TicketActionPerformed}
-import ch.seidel.mobilequeue.akka.UserRegistryActor.Authenticate
-import scala.util.Try
-import scala.util.Success
-import ch.seidel.mobilequeue.http.JsonSupport
-import akka.actor.ActorLogging
-import ch.seidel.mobilequeue.akka.EventRegistryActor.CreateEventTicket
-import ch.seidel.mobilequeue.model.HelloImOnline
 import java.util.UUID
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.DeleteTicket
-import ch.seidel.mobilequeue.akka.EventRegistryActor.DeleteEventTicket
-import ch.seidel.mobilequeue.http.JsonSupport
-import akka.http.scaladsl.model.ws.BinaryMessage
+
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.Failure
-import akka.actor.PoisonPill
+
+import akka.actor.{ Actor, ActorLogging, ActorRef }
+import akka.pattern.ask
+import akka.http.scaladsl.model.ws.{ BinaryMessage, Message, TextMessage }
+import akka.stream.{ Graph, OverflowStrategy, SinkShape }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.util.Timeout
+
+import spray.json._
+
+import ch.seidel.mobilequeue.akka.EventRegistryActor.CreateEventTicket
+import ch.seidel.mobilequeue.akka.EventRegistryActor.DeleteEventTicket
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketActionPerformed }
+import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed }
+import ch.seidel.mobilequeue.akka.UserRegistryActor.Authenticate
+import ch.seidel.mobilequeue.http.JsonSupport
+import ch.seidel.mobilequeue.model._
 
 class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) extends Actor with Hashing with ActorLogging with JsonSupport {
   import akka.pattern.pipe
@@ -41,7 +33,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
 //  val mediator = DistributedPubSub(context.system).mediator
   var wsSend: Option[ActorRef] = None
   var user: Option[User] = None
-  var ticket: Option[Ticket] = None
+  var ticket: Set[Ticket] = Set.empty
   val liveticker = context.system.scheduler.schedule(15.second, 15.second) {
         self ! KeepAlive
       }
@@ -61,18 +53,18 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       
       
     case ta @ TicketActionPerformed(t, text) => 
-      ticket = Some(t)
+      ticket += t
       val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
       wsSend.foreach(_ ! tm)
       
-    case s @ Subscribe(channel) => // with channel = (event, ticket) => registriere ticket in der TicketRegistry
+    case s @ Subscribe(channel, cnt) =>
       println(s"Subscribe $s")
-      eventRegistryActor ! CreateEventTicket(Ticket(0L, user.get.id, channel, "", ""), self)
+      eventRegistryActor ! CreateEventTicket(Ticket(0L, user.get.id, channel, "", ""), cnt, self)
 
-    case s @ UnSubscribe(channel) => // abmeldung
+    case s @ UnSubscribe(channel) =>
       println(s"UnSubscribe $s")
       ticket.filter(t => t.eventid == channel).foreach(t => { 
-        ticket = None
+        ticket -= t
         eventRegistryActor ! DeleteEventTicket(t.eventid, t.id)
       })
       
@@ -97,11 +89,15 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       val di = deviceId.filter(i => i != "").getOrElse(UUID.randomUUID().toString())
       userRegistryActor ? Authenticate(username, "", di) pipeTo self
     
-    case UserActionPerformed(authenticatedUser, _) =>
-      println("user authenticated: " + authenticatedUser)
-      user = Some(authenticatedUser)
-      wsSend.foreach(_ ! TextMessage("deviceId="+authenticatedUser.deviceIds.head))
-      context.become(authenticated)
+    case UserActionPerformed(authenticatedUser, reason) =>
+      println(reason + ": " + authenticatedUser)
+      if (authenticatedUser.deviceIds.isEmpty) {
+        wsSend.foreach(_ ! TextMessage(reason))
+      } else {
+        user = Some(authenticatedUser)
+        wsSend.foreach(_ ! TextMessage("deviceId="+authenticatedUser.deviceIds.headOption.getOrElse("")))
+        context.become(authenticated)
+      }
 
     case ClientActor.Stop =>
       println("Closing client actor")
@@ -115,6 +111,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
 
 object ClientActor extends JsonSupport with EnrichedJson {
   case object Stop
+
   import ch.seidel.mobilequeue.app.Core._
   
   def websocketFlow(actorRef: ActorRef): Flow[Message, PubSub, Any] =

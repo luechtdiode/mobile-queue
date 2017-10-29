@@ -18,8 +18,15 @@ final case class User
   mail: String,
   @(ApiModelProperty @field)(value = "mobile-phone of the user")
   mobile: String
-)
+  ) {
+  def withHiddenPassword = copy(password = "***")
+  def withHiddenDeviceIds = copy(deviceIds = Seq.empty)
+}
 
+object UserDefaults {
+  def empty(name: String): User = User(0, Seq.empty, name, "***", "", "")
+  def empty(id: Long): User = User(id, Seq.empty, "not existing!", "***", "", "")
+}
 //object User {
 //  def apply(id: Long, deviceId: String, name: String): User = User(id, Seq(deviceId), name, "", "", "")
 //}

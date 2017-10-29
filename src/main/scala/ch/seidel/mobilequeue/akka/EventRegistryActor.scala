@@ -1,17 +1,18 @@
 package ch.seidel.mobilequeue.akka
 
-import akka.actor.{ Actor, ActorLogging, Props }
+import akka.actor.{ Actor, ActorLogging, Props, ActorRef, PoisonPill, Terminated }
 import akka.actor.actorRef2Scala
 
 import ch.seidel.mobilequeue.model._
-import akka.actor.ActorRef
-import akka.actor.PoisonPill
+
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetTickets
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetNextTickets
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.CreateTicket
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetTicket
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.DeleteTicket
-import akka.actor.Terminated
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.TicketCreated
+
+import ch.seidel.mobilequeue.akka.UserRegistryActor.ClientConnected
 
 object EventRegistryActor {
   sealed trait EventRegistryMessage
@@ -23,64 +24,83 @@ object EventRegistryActor {
   
   final case class GetEventTickets(eventId: Long) extends EventRegistryMessage
   final case class GetNextEventTickets(eventId: Long, cnt: Int) extends EventRegistryMessage
-  final case class CreateEventTicket(ticket: Ticket, clientActor: ActorRef) extends EventRegistryMessage
+  final case class CreateEventTicket(ticket: Ticket, cnt: Int, clientActor: ActorRef) extends EventRegistryMessage
   final case class GetEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
   final case class DeleteEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
-  
   def props: Props = Props[EventRegistryActor]
 }
 
 class EventRegistryActor extends Actor with ActorLogging {
   import EventRegistryActor._
+  import context._
+  
+  def operateWith(ticketsForEventActors: Map[Event, ActorRef], events: Map[Long, Event]): Receive = {
 
-  var eventActors = Map.empty[Event, ActorRef]
-  var events = Map.empty[Long, Event]
-
-  def receive: Receive = {
+    // events crud
     case GetEvents =>
-      sender() ! Events(eventActors.keys.toSeq)
+      sender() ! Events(ticketsForEventActors.keys.toSeq)
+      
     case CreateEvent(event) =>
       val withId = event.copy(id = events.foldLeft(0L)((acc, event) => {math.max(event._1, acc)}) + 1L)
       val tickets = context.actorOf(TicketRegistryActor.props, s"ticketRegistryActor-${withId.id}")
-      context.watch(tickets)
-      eventActors += (withId -> tickets)
-      events += (withId.id -> withId)
+      watch(tickets)
+      become(operateWith(ticketsForEventActors + (withId -> tickets), events + (withId.id -> withId)))
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")
+      
     case GetEvent(id) =>
       sender() ! events.get(id)
+      
     case DeleteEvent(id) =>
       val toDelete = events.get(id).getOrElse(Event(id, 0, "not existing!", ""))
       toDelete match {
         case Event(id,_,_,_) if (id > 0) =>
-          eventActors.get(toDelete).foreach(_ ! PoisonPill)
-          eventActors -= toDelete
-          events -= id
+          ticketsForEventActors.get(toDelete).foreach(_ ! PoisonPill)
+          become(operateWith(ticketsForEventActors - toDelete, events - id))
         case _ =>
       }      
       sender() ! ActionPerformed(toDelete, s"Event ${id} deleted.")
       
     case GetEventTickets(eventId: Long) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(GetTickets)))
+      events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTickets)))
+      
+    // event routing to ticket actors
     case GetNextEventTickets(eventId: Long, cnt: Int) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(GetNextTickets(cnt))))
-    case CreateEventTicket(ticket, clientActor) => 
+      events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetNextTickets(cnt))))
+      
+    case CreateEventTicket(ticket, cnt, clientActor) => 
       events.get(ticket.eventid).foreach(event =>
-        eventActors.get(event).foreach{ ticketingActor =>
-          ticketingActor.forward(CreateTicket(ticket, clientActor))
+        ticketsForEventActors.get(event).foreach{ ticketingActor =>
+          ticketingActor.forward(CreateTicket(ticket, cnt, clientActor))
         }
       )
-    case GetEventTicket(eventId: Long, id: Long) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(GetTicket(id))))
-    case DeleteEventTicket(eventId: Long, id: Long) => 
-      events.get(eventId).foreach(eventActors.get(_).foreach(_.forward(DeleteTicket(id))))
+
+    // broadcast to all other connected clients of the same user
+    case tc @ TicketCreated =>
+      ticketsForEventActors.values
+        .filter(_ != sender)
+        .foreach(_.forward(tc))
       
+    case GetEventTicket(eventId: Long, id: Long) => 
+      events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTicket(id))))
+      
+    case DeleteEventTicket(eventId: Long, id: Long) => 
+      events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(DeleteTicket(id))))
+    
+    // supervision of connected clients
+    case connected @ ClientConnected =>
+      ticketsForEventActors.values.foreach(_.forward(connected))
+      
+    // supervision of child-actors (tickets per event)
     case Terminated(tickets) =>
-      eventActors
+      unwatch(tickets)
+      val (tkts, evts) = ticketsForEventActors
         .filter(pair => pair._2 == tickets)
         .map(_._1)
-        .foreach{event =>
-          eventActors -= event
-          events -= event.id
+        .foldLeft((ticketsForEventActors, events)){(acc, toDelete) =>
+          (ticketsForEventActors - toDelete, events - toDelete.id)
         }
+     become(operateWith(tkts, evts))
   }
+  
+  def receive = operateWith(Map.empty[Event, ActorRef], Map.empty[Long, Event])
 }

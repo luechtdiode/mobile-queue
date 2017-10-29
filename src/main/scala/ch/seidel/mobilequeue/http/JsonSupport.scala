@@ -4,7 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed}
 import ch.seidel.mobilequeue.akka.EventRegistryActor.{ ActionPerformed => EventActionPerformed}
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketTicketActionPerformed}
-import spray.json.DefaultJsonProtocol
+import spray.json._
 import ch.seidel.mobilequeue.model._
 import spray.json.JsonReader
 import spray.json.JsObject
@@ -29,7 +29,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
 //  implicit val registerFormat = jsonFormat1(Register)
 //  implicit val loginFormat = jsonFormat2(LogIn)
   implicit val helloFormat = jsonFormat2(HelloImOnline)
-  implicit val subscribeFormat = jsonFormat1(Subscribe)
+  implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)
  
   val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(      
@@ -45,7 +45,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
       case Some(jsonReader) => 
         val plain = json.withoutFields("type")
         val ret = jsonReader.read(plain)
-        println(ret)
+//        println(ret)
         ret
       case _ => throw new Exception(s"Unable to parse $json to PubSub")
     }

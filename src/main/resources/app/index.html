@@ -97,6 +97,7 @@
 		function init() {
 			console.log('init');
 			document.getElementById("username").value = getUsername();
+			document.getElementById("count").value = 1;
 			getDeviceId();
 			connect();
 		}
@@ -110,10 +111,11 @@
 		    }));
 			document.getElementById("login").disabled = true;
 		}
-		function subscribeEvent(name) {
+		function subscribeEvent(name, count) {
 			sendMessage(JSON.stringify({
 		    	'type' : 'Subscribe', 
-		    	'channel' : parseInt(name)
+		    	'channel' : parseInt(name),
+		    	'count': parseInt(count)
 		    }));
 			document.getElementById("subscribe").disabled = true;
 			document.getElementById("unsubscribe").disabled = false;
@@ -143,8 +145,9 @@
 <form>
     <input type="text" id="username" name="username" placeholder="Your Name please" />
     <button id="login" onclick="sayHello(username.value); return false;">Login</button>
-    <input type="text" name="test" placeholder="event-identification"/>
-    <button id="subscribe" onclick="subscribeEvent(test.value); return false;">Get me a ticket</button>
+    <input id="channel" type="text" name="channel" placeholder="event-identification"/>
+    <input id="count" type="text" name="count" placeholder="ticket-count (min 1, max 10)"/>
+    <button id="subscribe" onclick="subscribeEvent(channel.value, count.value); return false;">Get me a ticket</button>
     <button id="unsubscribe" onclick="unsubscribeEvent(test.value); return false;">Take my ticket back</button>
     <button id="disconnect" onclick="disconnectWS(); return false;">Disconnect</button>
 </form>

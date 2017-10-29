@@ -6,15 +6,16 @@ import akka.pattern.ask
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.Await
 import scala.util.control.NonFatal
-import ch.seidel.mobilequeue.app.Core
+
 import akka.actor.ActorRef
+import akka.stream.scaladsl.Flow
+import akka.http.scaladsl.model.ws.Message
+
+import ch.seidel.mobilequeue.app.Core
 import ch.seidel.mobilequeue.app.BootedCore
 import ch.seidel.mobilequeue.model.User
-import akka.stream.scaladsl.Flow
-import akka.NotUsed
-import akka.http.scaladsl.model.ws.Message
-import scala.concurrent.Await
 
 class ClientActorSupervisor extends Actor {
   import ClientActorSupervisor._
@@ -40,6 +41,6 @@ object ClientActorSupervisor {
   def createFlow(): Flow[Message, Message, Any] = {
     Await.result(
         ask(supervisor, CreateClient(eventRegistryActor, userRegistryActor))(5000 milli)
-        .mapTo[Flow[Message, Message, NotUsed]], 5000 milli)
+        .mapTo[Flow[Message, Message, Any]], 5000 milli)
   }
 }
