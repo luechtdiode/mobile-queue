@@ -6,6 +6,7 @@
     	var username;
     	var connected = false;
         var tickets = {};
+        var confirmData;
         
         function connect(message) {
 			websocket = new WebSocket("ws://localhost:8080/ticketTrigger");
@@ -35,16 +36,27 @@
 				}
 				connected = true;
 				try {
-					var description = JSON.parse(evt.data)['description'];
-					if (description.indexOf('called')>-1) {
+					var type = JSON.parse(evt.data)['type'];
+					if (type === 'TicketCalled') {
+						confirmData = evt.data;
+						document.getElementById("output").innerHTML = 
+							  "<h1 style='color: green;'>It's time to go!</h1>"
+						    + "<h2 style='color: green;>We expect You in the next 10 minutes to start with Your Event!" + "</h2>"
+						    + "<p> please confirm that you'r willing to be on place within 10 minutes</p><br>"
+						    + "<button onclick='confirm(); return false;'>Confirm " + JSON.parse(evt.data)['count'] + " persons</button>";						
+					} else {
+						var description = JSON.parse(evt.data)['description'];
+						if (description.indexOf('called')>-1) {
+					
 						document.getElementById("subscribe").disabled = false;
 						document.getElementById("unsubscribe").disabled = true;					
 						document.getElementById("output").innerHTML = 
-							  "<h1 style='color: green;'>It's time to go!</h1>"
+							  "<h1 style='color: green;'>OK - accepted!</h1>"
 						    + "<h2 style='color: green;>We expect You in the next 10 minutes to start with Your Event!" + "</h2>";
-					} else {
-						document.getElementById("output").innerHTML = "<p style='color: blue;'>> RESPONSE: "
-							+ description + "</p>";
+						} else {
+							document.getElementById("output").innerHTML = "<p style='color: blue;'>> RESPONSE: "
+								+ description + "</p>";
+						}
 					}
  				} catch(e) {
  					document.getElementById("output").innerHTML = "<p style='color: blue;'>> RESPONSE: "
@@ -110,6 +122,10 @@
 		    	'deviceId' : deviceId
 		    }));
 			document.getElementById("login").disabled = true;
+		}
+		function confirm() {
+			sendMessage(confirmData);
+			confirmData = undefined;
 		}
 		function subscribeEvent(name, count) {
 			sendMessage(JSON.stringify({

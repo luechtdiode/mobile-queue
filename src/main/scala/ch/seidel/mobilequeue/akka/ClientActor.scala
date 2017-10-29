@@ -7,10 +7,10 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 
 import akka.actor.{ Actor, ActorLogging, ActorRef }
-import akka.pattern.ask
 import akka.http.scaladsl.model.ws.{ BinaryMessage, Message, TextMessage }
 import akka.stream.{ Graph, OverflowStrategy, SinkShape }
 import akka.stream.scaladsl.{ Flow, Sink, Source }
+import akka.pattern.ask
 import akka.util.Timeout
 
 import spray.json._
@@ -34,6 +34,9 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
   var wsSend: Option[ActorRef] = None
   var user: Option[User] = None
   var ticket: Set[Ticket] = Set.empty
+  var pendingTicketAks: Map[TicketCalled, ActorRef] = Map.empty
+  var pendingTicketAksCleanupPhases: Map[TicketCalled, Int] = Map.empty
+  
   val liveticker = context.system.scheduler.schedule(15.second, 15.second) {
         self ! KeepAlive
       }
@@ -50,7 +53,29 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
   def authenticated: Receive = {
     case KeepAlive =>
       wsSend.foreach(_ ! TextMessage("keepAlive"))
+      // cleanup pending tickets when they're two keepalive cycles unused
+      pendingTicketAksCleanupPhases = pendingTicketAks.foldLeft(Map[TicketCalled, Int]()){(acc, pendingTicket) =>
+        val pendingStage = pendingTicketAksCleanupPhases.get(pendingTicket._1).getOrElse(0) + 1
+        if (pendingStage > 2) {
+          pendingTicketAks -= pendingTicket._1
+          val ta = TicketActionPerformed(pendingTicket._1.ticket, s"unused -> ticket with ${pendingTicket._1.count} persons has expired")
+          val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
+          wsSend.foreach(_ ! tm)
+          acc
+        } else {
+          acc + (pendingTicket._1 -> pendingStage)
+        }
+      }
       
+    case tc @ TicketCalled(t, cnt) =>
+      if (sender.path.name.startsWith(TicketRegistryActor.name)) {
+        pendingTicketAks += (tc -> sender())
+        val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
+        wsSend.foreach(_ ! tm)
+      } else if (pendingTicketAks.keySet.contains(tc)) {
+        pendingTicketAks(tc) ! tc
+        pendingTicketAks -= tc
+      }
       
     case ta @ TicketActionPerformed(t, text) => 
       ticket += t
@@ -87,7 +112,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       
     case h @ HelloImOnline(username, deviceId) => 
       val di = deviceId.filter(i => i != "").getOrElse(UUID.randomUUID().toString())
-      userRegistryActor ? Authenticate(username, "", di) pipeTo self
+      userRegistryActor ! Authenticate(username, "", di)// pipeTo self
     
     case UserActionPerformed(authenticatedUser, reason) =>
       println(reason + ": " + authenticatedUser)

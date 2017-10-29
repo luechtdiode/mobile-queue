@@ -48,13 +48,13 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor with ActorLogging
         log.debug("user created " + withId)
       } else {
         users.keys.filter(u => u.name == name && (u.password == pw || u.deviceIds.contains(deviceId))) match {
-          case (u :: _) =>
-            val ud = if (u.deviceIds.contains(deviceId)) u else {
-              val udr = u.copy(deviceIds = u.deviceIds :+ deviceId)
-              become(operateWith(users - u + (udr -> users(u))))
+          case u if(u.nonEmpty) =>
+            val ud = if (u.head.deviceIds.contains(deviceId)) u.head else {
+              val udr = u.head.copy(deviceIds = u.head.deviceIds :+ deviceId)
+              become(operateWith(users - u.head + (udr -> users(u.head))))
               udr.copy(deviceIds = Seq(deviceId)).withHiddenPassword
             }
-            sender() ! ActionPerformed(ud, s"User ${u.id} authenticated.")
+            sender() ! ActionPerformed(ud, s"User ${u.head.id} authenticated.")
             eventRegistry.forward(ClientConnected(ud, deviceId, sender))
             log.debug("user authenticated " + ud)
           case _ =>

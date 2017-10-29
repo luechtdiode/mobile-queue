@@ -13,6 +13,7 @@ import ch.seidel.mobilequeue.akka.TicketRegistryActor.DeleteTicket
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.TicketCreated
 
 import ch.seidel.mobilequeue.akka.UserRegistryActor.ClientConnected
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetAccepted
 
 object EventRegistryActor {
   sealed trait EventRegistryMessage
@@ -24,6 +25,7 @@ object EventRegistryActor {
   
   final case class GetEventTickets(eventId: Long) extends EventRegistryMessage
   final case class GetNextEventTickets(eventId: Long, cnt: Int) extends EventRegistryMessage
+  final case class GetEventAccepted(eventId: Long) extends EventRegistryMessage
   final case class CreateEventTicket(ticket: Ticket, cnt: Int, clientActor: ActorRef) extends EventRegistryMessage
   final case class GetEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
   final case class DeleteEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
@@ -42,7 +44,7 @@ class EventRegistryActor extends Actor with ActorLogging {
       
     case CreateEvent(event) =>
       val withId = event.copy(id = events.foldLeft(0L)((acc, event) => {math.max(event._1, acc)}) + 1L)
-      val tickets = context.actorOf(TicketRegistryActor.props, s"ticketRegistryActor-${withId.id}")
+      val tickets = context.actorOf(TicketRegistryActor.props, s"${TicketRegistryActor.name}-${withId.id}")
       watch(tickets)
       become(operateWith(ticketsForEventActors + (withId -> tickets), events + (withId.id -> withId)))
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")
@@ -71,6 +73,12 @@ class EventRegistryActor extends Actor with ActorLogging {
       events.get(ticket.eventid).foreach(event =>
         ticketsForEventActors.get(event).foreach{ ticketingActor =>
           ticketingActor.forward(CreateTicket(ticket, cnt, clientActor))
+        }
+      )
+    case GetEventAccepted(eventId) =>
+      events.get(eventId).foreach(event =>
+        ticketsForEventActors.get(event).foreach{ ticketingActor =>
+          ticketingActor.forward(GetAccepted)
         }
       )
 

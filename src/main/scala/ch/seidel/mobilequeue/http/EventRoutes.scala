@@ -21,6 +21,8 @@ import ch.seidel.mobilequeue.akka.EventRegistryActor._
 import ch.seidel.mobilequeue.model._
 import akka.actor.ActorLogging
 import ch.seidel.mobilequeue.app.Core._
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.InvokedTicketsSummary
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetAccepted
 
 //#event-routes-class
 trait EventRoutes extends JsonSupport with RouterLogging {
@@ -56,24 +58,46 @@ trait EventRoutes extends JsonSupport with RouterLogging {
       //#events-get-post
       //#events-get-delete
       path(LongNumber) { id =>
+        pathEnd {
+          get {
+            //#retrieve-event-info
+            val maybeEvent: Future[Option[Event]] =
+              (eventRegistryActor ? GetEvent(id)).mapTo[Option[Event]]
+            rejectEmptyResponse {
+              complete(maybeEvent)
+            }
+            //#retrieve-event-info
+          } ~
+          delete {
+            //#events-delete-logic
+            val eventDeleted: Future[ActionPerformed] =
+              (eventRegistryActor ? DeleteEvent(id)).mapTo[ActionPerformed]
+            onSuccess(eventDeleted) { performed =>
+              log.info("Deleted event [{}]: {}", id, performed.description)
+              complete((StatusCodes.OK, performed))
+            }
+            //#events-delete-logic
+          }
+        }
+      } ~
+      path(LongNumber / "accepted") { id =>
         get {
-          //#retrieve-event-info
-          val maybeEvent: Future[Option[Event]] =
-            (eventRegistryActor ? GetEvent(id)).mapTo[Option[Event]]
+          val maybeEvent: Future[InvokedTicketsSummary] =
+            (eventRegistryActor ? GetEventAccepted(id)).mapTo[InvokedTicketsSummary]
           rejectEmptyResponse {
             complete(maybeEvent)
           }
-          //#retrieve-event-info
-        } ~
-        delete {
-          //#events-delete-logic
-          val eventDeleted: Future[ActionPerformed] =
-            (eventRegistryActor ? DeleteEvent(id)).mapTo[ActionPerformed]
-          onSuccess(eventDeleted) { performed =>
-            log.info("Deleted event [{}]: {}", id, performed.description)
-            complete((StatusCodes.OK, performed))
+        }          
+      } ~
+      path(LongNumber / IntNumber) {(id, cnt) => 
+        pathEnd {
+          get {
+            val maybeEvent: Future[InvokedTicketsSummary] =
+              (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[InvokedTicketsSummary]
+            rejectEmptyResponse {
+              complete(maybeEvent)
+            }
           }
-          //#events-delete-logic
         }
       }
       //#events-get-delete

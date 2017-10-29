@@ -8,6 +8,7 @@ import spray.json._
 import ch.seidel.mobilequeue.model._
 import spray.json.JsonReader
 import spray.json.JsObject
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.InvokedTicketsSummary
 
 trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   // import the default encoders for primitive types (Int, String, Lists etc)
@@ -31,6 +32,8 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val helloFormat = jsonFormat2(HelloImOnline)
   implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)
+  implicit val ticketCalledFormat = jsonFormat2(TicketCalled)
+  implicit val summaryFormat = jsonFormat1(InvokedTicketsSummary)
  
   val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(      
         classOf[HelloImOnline].getSimpleName -> helloFormat
@@ -38,6 +41,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
 //      , classOf[LogIn].getSimpleName -> loginFormat
       , classOf[Subscribe].getSimpleName -> subscribeFormat
       , classOf[UnSubscribe].getSimpleName -> unsubscribeFormat
+      , classOf[TicketCalled].getSimpleName -> ticketCalledFormat
       )
   
   implicit val messagesFormat: JsonReader[PubSub] = { json =>

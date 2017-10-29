@@ -16,6 +16,7 @@ import akka.http.scaladsl.model.ws.Message
 import ch.seidel.mobilequeue.app.Core
 import ch.seidel.mobilequeue.app.BootedCore
 import ch.seidel.mobilequeue.model.User
+import java.util.UUID
 
 class ClientActorSupervisor extends Actor {
   import ClientActorSupervisor._
@@ -28,7 +29,8 @@ class ClientActorSupervisor extends Actor {
 
   override def receive = {
     case CreateClient(eventRegistryActor, userRegistryActor) => 
-      sender() ! ClientActor.createActorSinkSource(context.actorOf(Props(classOf[ClientActor], eventRegistryActor, userRegistryActor)))
+      sender() ! ClientActor.createActorSinkSource(context.actorOf(
+          Props(classOf[ClientActor], eventRegistryActor, userRegistryActor), "client-" + UUID.randomUUID().toString()))
   }
 }
 
