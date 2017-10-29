@@ -23,7 +23,7 @@ object Boot extends App with Config with BootedCore with ApiService {
       }
   }
 
-  println(s"Server online at http://localhost:$httpPort/\ntype 'quit' to stop...")
+  println(s"Server online at http://$httpInterface:$httpPort/\ntype 'quit' to stop...")
 
   while (true) {
     StdIn.readLine() match {
