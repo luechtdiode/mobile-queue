@@ -10,7 +10,9 @@
         
         function connect(message) {
         	var host = location.host;
-			websocket = new WebSocket("ws://" + location.host + "/ticketTrigger");
+        	var path = location.pathname;
+        	var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+			websocket = new WebSocket(protocol +"//" + location.host + path + "ticketTrigger");
 			websocket.onopen = function() {
 				document.getElementById("output").innerHTML = "<p>> CONNECTED</p>";
 				document.getElementById("login").disabled = false;
