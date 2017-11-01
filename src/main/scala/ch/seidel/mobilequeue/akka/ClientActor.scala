@@ -10,7 +10,7 @@ import akka.actor.{ Actor, ActorLogging, ActorRef }
 import akka.http.scaladsl.model.ws.{ BinaryMessage, Message, TextMessage }
 import akka.stream.{ Graph, OverflowStrategy, SinkShape }
 import akka.stream.scaladsl.{ Flow, Sink, Source }
-import akka.pattern.ask
+//import akka.pattern.ask
 import akka.util.Timeout
 
 import spray.json._
@@ -23,7 +23,7 @@ import ch.seidel.mobilequeue.akka.UserRegistryActor.Authenticate
 import ch.seidel.mobilequeue.http.JsonSupport
 import ch.seidel.mobilequeue.model._
 
-class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) extends Actor with Hashing with ActorLogging with JsonSupport {
+class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) extends Actor with Hashing with JsonSupport {
   import akka.pattern.pipe
   // Get the implicit ExecutionContext from this import
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -80,6 +80,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     case ta @ TicketActionPerformed(t, text) =>
       ticket += t
       val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
+      println("sending TicketActionPerformed from " + self.path + " to " + wsSend)
       wsSend.foreach(_ ! tm)
 
     case s @ Subscribe(channel, cnt) =>
@@ -115,7 +116,6 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       userRegistryActor ! Authenticate(username, "", di) // pipeTo self
 
     case UserActionPerformed(authenticatedUser, reason) =>
-      println(reason + ": " + authenticatedUser)
       if (authenticatedUser.deviceIds.isEmpty) {
         wsSend.foreach(_ ! TextMessage(reason))
       } else {
@@ -158,7 +158,7 @@ object ClientActor extends JsonSupport with EnrichedJson {
 
   def createActorSinkSource(clientActor: ActorRef): Flow[Message, Message, Any] = {
 
-    val source: Source[Nothing, ActorRef] = Source.actorRef(256, OverflowStrategy.fail).mapMaterializedValue { wsSend =>
+    val source: Source[Nothing, ActorRef] = Source.actorRef(1024, OverflowStrategy.dropNew).mapMaterializedValue { wsSend =>
       clientActor ! wsSend
       wsSend
     }

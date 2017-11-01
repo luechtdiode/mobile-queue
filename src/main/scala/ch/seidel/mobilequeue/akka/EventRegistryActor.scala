@@ -32,7 +32,7 @@ object EventRegistryActor {
   def props: Props = Props[EventRegistryActor]
 }
 
-class EventRegistryActor extends Actor with ActorLogging {
+class EventRegistryActor extends Actor /*with ActorLogging*/ {
   import EventRegistryActor._
   import context._
 
@@ -82,6 +82,7 @@ class EventRegistryActor extends Actor with ActorLogging {
 
     // broadcast to all other connected clients of the same user
     case tc @ TicketCreated =>
+      println("handle TicketCreated with " + ticketsForEventActors.values)
       ticketsForEventActors.values
         .filter(_ != sender)
         .foreach(_.forward(tc))

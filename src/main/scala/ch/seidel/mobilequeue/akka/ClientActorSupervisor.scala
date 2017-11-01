@@ -42,6 +42,9 @@ object ClientActorSupervisor {
   val supervisor = system.actorOf(Props[ClientActorSupervisor])
 
   def createFlow(): Flow[Message, Message, Any] = {
+    //    ClientActor.createActorSinkSource(system.actorOf(
+    //      Props(classOf[ClientActor], eventRegistryActor, userRegistryActor), "client-" + UUID.randomUUID().toString()
+    //    ))
     Await.result(
       ask(supervisor, CreateClient(eventRegistryActor, userRegistryActor))(5000 milli)
       .mapTo[Flow[Message, Message, Any]], 5000 milli

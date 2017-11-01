@@ -1,7 +1,7 @@
 package ch.seidel.mobilequeue.akka
 
 import akka.actor.{ Actor, ActorLogging, Props, ActorRef, Terminated }
-import akka.pattern.ask
+//import akka.pattern.ask
 import akka.util.Timeout
 
 import scala.concurrent.duration.DurationInt
@@ -29,13 +29,13 @@ object TicketRegistryActor {
   def props: Props = Props[TicketRegistryActor]
 }
 
-class TicketRegistryActor extends Actor with ActorLogging {
+class TicketRegistryActor extends Actor /*with ActorLogging*/ {
   import TicketRegistryActor._
   import context._
   import akka.pattern.pipe
   // Get the implicit ExecutionContext from this import
   import scala.concurrent.ExecutionContext.Implicits.global
-  private lazy val askTicketAkTimeout = Timeout(60.seconds)
+  //  private lazy val askTicketAkTimeout = Timeout(60.seconds)
   var acceptedInvites: List[(Ticket, Int)] = List.empty
 
   case class TicketClientHolder(count: Int, clients: Set[ActorRef])
@@ -45,6 +45,7 @@ class TicketRegistryActor extends Actor with ActorLogging {
       sender() ! Tickets(tickets.keys.toSeq)
 
     case GetNextTickets(cnt) =>
+      println("callin GetNextTickets from " + sender())
       acceptedInvites = List.empty
       val selected = tickets.toSeq
         .filter(t => t._2.clients.nonEmpty) // select just clients, which are online
@@ -64,7 +65,8 @@ class TicketRegistryActor extends Actor with ActorLogging {
         .takeWhile(pair => pair._2 <= cnt)
         .map(pair => (pair._1, pair._3, tickets(pair._1).clients))
 
-      implicit val timeout = askTicketAkTimeout;
+      //      implicit val timeout = askTicketAkTimeout;
+      println("calling tickets for " + selected)
       selected.foreach { pair =>
         pair._3.foreach { _ ! TicketCalled(pair._1, pair._2) }
       }
@@ -122,6 +124,7 @@ class TicketRegistryActor extends Actor with ActorLogging {
       if (selectedTickets.nonEmpty) context.watch(clientActor)
 
     case Terminated(clientActor) =>
+      println("unwatching " + clientActor)
       context.unwatch(clientActor)
       tickets
         .filter(pair => pair._2.clients.contains(clientActor))

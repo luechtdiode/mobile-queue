@@ -90,7 +90,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
       }
     }
     //#actual-test
-    
+
     "be able to remove already removed users (DELETE /users)" in {
       // ticket the RequestBuilding DSL provided by ScalatestRouteSpec:
       val request = Delete(uri = "/users/34")

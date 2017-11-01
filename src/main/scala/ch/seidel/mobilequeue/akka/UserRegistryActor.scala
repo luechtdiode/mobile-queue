@@ -25,7 +25,7 @@ object UserRegistryActor {
   def props(eventRegistry: ActorRef): Props = Props(classOf[UserRegistryActor], eventRegistry)
 }
 
-class UserRegistryActor(eventRegistry: ActorRef) extends Actor with ActorLogging {
+class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLogging*/ {
   import UserRegistryActor._
   import context._
 
@@ -45,7 +45,7 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor with ActorLogging
         val withId = createUser(User(0, Seq(deviceId), name, pw, "", ""))
         sender() ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.id} authenticated.")
         eventRegistry.forward(ClientConnected(withId, deviceId, sender))
-        log.debug("user created " + withId)
+        println("user created " + withId)
       } else {
         users.keys.filter(u => u.name == name && (u.password == pw || u.deviceIds.contains(deviceId))) match {
           case u if (u.nonEmpty) =>
@@ -56,7 +56,7 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor with ActorLogging
             }
             sender() ! ActionPerformed(ud, s"User ${u.head.id} authenticated.")
             eventRegistry.forward(ClientConnected(ud, deviceId, sender))
-            log.debug("user authenticated " + ud)
+            println("user authenticated " + ud)
           case _ =>
             sender() ! ActionPerformed(UserDefaults.empty(name), s"User ${name} exists already.")
         }

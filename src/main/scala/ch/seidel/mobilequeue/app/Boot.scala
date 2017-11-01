@@ -1,5 +1,6 @@
 package ch.seidel.mobilequeue.app
 
+import scala.util.Try
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import ch.seidel.mobilequeue.http.ApiService
@@ -28,10 +29,12 @@ object Boot extends App with Config with BootedCore with ApiService {
   while (true) {
     StdIn.readLine() match {
       case s: String if (s.endsWith("quit")) => shutDown()
-      //      case "createEvent" => (eventRegistryActor ? CreateEvent(Event())).andThen {
-      //        case ActionPerformed(eventId, msg) => println(msg, eventId)
-      //      }
-      case _ => eventRegistryActor ! GetNextEventTickets(1L, 10)
+      case s: String => // eventRegistryActor ! GetNextEventTickets(1L, 10)
+        println(s"command submited: '$s'")
+      //      case s =>
+      //        println(s"cached unknown comand: '$s'")
+      case _ =>
+        Thread.sleep(5000)
     }
   }
   shutDown()

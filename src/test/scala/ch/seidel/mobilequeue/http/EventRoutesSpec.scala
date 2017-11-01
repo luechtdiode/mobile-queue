@@ -29,7 +29,6 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
     with EventRoutes {
   //#test-top
 
-
   lazy val routes = eventRoutes
 
   //#set-up
@@ -87,7 +86,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
       }
     }
     //#actual-test
-    
+
     "be able to remove already removed events (DELETE /events)" in {
       // event the RequestBuilding DSL provided by ScalatestRouteSpec:
       val request = Delete(uri = "/events/34")
