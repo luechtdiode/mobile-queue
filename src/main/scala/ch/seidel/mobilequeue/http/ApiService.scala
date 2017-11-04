@@ -15,13 +15,12 @@ trait ApiService extends RouteConcatenation
 
   private implicit lazy val _ = ch.seidel.mobilequeue.app.Core.system.dispatcher
 
-  
-  lazy val allroutes =  
+  lazy val allroutes =
     userRoutes ~
-    eventRoutes ~
-    //    ticketRoutes ~
-    resourceRoutes ~
-    swaggerRoutes ~
-    websocket ~
-    complete(StatusCodes.NotFound)
+      eventRoutes ~
+      //    ticketRoutes ~
+      resourceRoutes ~
+      swaggerRoutes ~
+      websocket ~
+      complete(StatusCodes.NotFound)
 }

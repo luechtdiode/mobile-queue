@@ -83,7 +83,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
         pendingTicketAks(tc) ! ts
         pendingTicketAks -= tc
       }
-      
+
     case tra: TicketReactivated =>
       ticket += tra.ticket
       val tm = TextMessage(tra.toJson.toJsonStringWithType(tra))

@@ -36,12 +36,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val summaryFormat = jsonFormat1(InvokedTicketsSummary)
 
   val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(
-      classOf[HelloImOnline].getSimpleName -> helloFormat 
-    , classOf[Subscribe].getSimpleName -> subscribeFormat
-    , classOf[UnSubscribe].getSimpleName -> unsubscribeFormat
-    , classOf[TicketCalled].getSimpleName -> ticketCalledFormat
-    , classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat
-    , classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat
+    classOf[HelloImOnline].getSimpleName -> helloFormat, classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat, classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat, classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat
   )
 
   implicit val messagesFormat: JsonReader[PubSub] = { json =>
