@@ -41,7 +41,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
   "UserRoutes" should {
     "return no users if no present (GET /users)" in {
       // note that there's no need for the host part in the uri:
-      val request = HttpRequest(uri = "/users")
+      val request = HttpRequest(uri = "/api/users")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -61,7 +61,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
       val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:
-      val request = Post("/users").withEntity(userEntity)
+      val request = Post("/api/users").withEntity(userEntity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.Created)
@@ -77,7 +77,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
     "be able to remove users (DELETE /users)" in {
       // user the RequestBuilding DSL provided by ScalatestRouteSpec:
-      val request = Delete(uri = "/users/1")
+      val request = Delete(uri = "/api/users/1")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -93,7 +93,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
     "be able to remove already removed users (DELETE /users)" in {
       // ticket the RequestBuilding DSL provided by ScalatestRouteSpec:
-      val request = Delete(uri = "/users/34")
+      val request = Delete(uri = "/api/users/34")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)

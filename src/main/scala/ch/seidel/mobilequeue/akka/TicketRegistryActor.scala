@@ -103,14 +103,14 @@ class TicketRegistryActor extends Actor /*with ActorLogging*/ {
           }
         }
         .takeWhile(pair => pair._2 <= cnt)
-        .filter(t => !acceptedInvites.exists(_._1 == t))
+        .filter(t => !acceptedInvites.exists(_._1 == t._1))
         .map(pair => (pair._1, pair._3, tickets(pair._1).clients))
 
       //      implicit val timeout = askTicketAkTimeout;
       println("calling tickets for " + selected)
       selected.foreach { pair =>
         pair._3.foreach { _ ! TicketCalled(pair._1, pair._2) }
-      }      
+      }
 
     case CreateTicket(ticket, cnt, clientActor) =>
       val newId = tickets.keys.foldLeft(0L)((acc, ticket) => { math.max(ticket.id, acc) }) + 1L

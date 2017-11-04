@@ -37,7 +37,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
   "EventRoutes" should {
     "return no events if no present (GET /events)" in {
       // note that there's no need for the host part in the uri:
-      val request = HttpRequest(uri = "/events")
+      val request = HttpRequest(uri = "/api/events")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -57,7 +57,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
       val eventEntity = Marshal(event).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:
-      val request = Post("/events").withEntity(eventEntity)
+      val request = Post("/api/events").withEntity(eventEntity)
 
       request ~> routes ~> check {
         status should ===(StatusCodes.Created)
@@ -73,7 +73,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
 
     "be able to remove events (DELETE /events)" in {
       // event the RequestBuilding DSL provided by ScalatestRouteSpec:
-      val request = Delete(uri = "/events/1")
+      val request = Delete(uri = "/api/events/1")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
@@ -89,7 +89,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
 
     "be able to remove already removed events (DELETE /events)" in {
       // event the RequestBuilding DSL provided by ScalatestRouteSpec:
-      val request = Delete(uri = "/events/34")
+      val request = Delete(uri = "/api/events/34")
 
       request ~> routes ~> check {
         status should ===(StatusCodes.OK)
