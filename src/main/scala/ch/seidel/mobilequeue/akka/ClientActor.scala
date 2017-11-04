@@ -77,6 +77,19 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
         pendingTicketAks -= tc
       }
 
+    case ts @ TicketSkipped(t, cnt) =>
+      val tc = TicketCalled(t, cnt)
+      if (pendingTicketAks.keySet.contains(tc)) {
+        pendingTicketAks(tc) ! ts
+        pendingTicketAks -= tc
+      }
+      
+    case tra: TicketReactivated =>
+      ticket += tra.ticket
+      val tm = TextMessage(tra.toJson.toJsonStringWithType(tra))
+      println("sending TicketReactivated from " + self.path + " to " + wsSend)
+      wsSend.foreach(_ ! tm)
+
     case ta @ TicketActionPerformed(t, text) =>
       ticket += t
       val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))

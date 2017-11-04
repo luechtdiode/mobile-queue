@@ -7,6 +7,8 @@ case class HelloImOnline(username: String, deviceId: Option[String]) extends Pub
 case class LogIn(name: String, password: String) extends PubSub
 case class Subscribe(channel: Long, count: Int) extends PubSub
 case class TicketCalled(ticket: Ticket, count: Int) extends PubSub
+case class TicketSkipped(ticket: Ticket, count: Int) extends PubSub
+case class TicketReactivated(ticket: Ticket, count: Int) extends PubSub
 
 //case class Publish(channel: String, event: String, data: JsValue) extends PubSub
 case class UnSubscribe(channel: Long) extends PubSub

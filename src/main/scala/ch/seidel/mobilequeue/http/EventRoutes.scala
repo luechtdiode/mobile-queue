@@ -34,8 +34,8 @@ trait EventRoutes extends JsonSupport with RouterLogging {
   //#all-routes
   //#events-get-post
   //#events-get-delete   
-  lazy val eventRoutes: Route = {
-    pathPrefix("events") {
+  lazy val eventRoutes: Route = {    
+    pathPrefix("api" / "events") {
       //#events-get-delete
       pathEnd {
         get {

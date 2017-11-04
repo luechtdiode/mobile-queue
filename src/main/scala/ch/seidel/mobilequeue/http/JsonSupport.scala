@@ -27,18 +27,21 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val eventActionPerformedJsonFormat = jsonFormat2(EventActionPerformed)
   implicit val ticketActionPerformedJsonFormat = jsonFormat2(TicketTicketActionPerformed)
 
-  //  implicit val registerFormat = jsonFormat1(Register)
-  //  implicit val loginFormat = jsonFormat2(LogIn)
   implicit val helloFormat = jsonFormat2(HelloImOnline)
   implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)
   implicit val ticketCalledFormat = jsonFormat2(TicketCalled)
+  implicit val ticketReactivatedFormat = jsonFormat2(TicketReactivated)
+  implicit val ticketSkippedFormat = jsonFormat2(TicketSkipped)
   implicit val summaryFormat = jsonFormat1(InvokedTicketsSummary)
 
   val caseClassesJsonReader: Map[String, JsonReader[_ <: PubSub]] = Map(
-    classOf[HelloImOnline].getSimpleName -> helloFormat //      , classOf[Register].getSimpleName -> registerFormat
-    //      , classOf[LogIn].getSimpleName -> loginFormat
-    , classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat
+      classOf[HelloImOnline].getSimpleName -> helloFormat 
+    , classOf[Subscribe].getSimpleName -> subscribeFormat
+    , classOf[UnSubscribe].getSimpleName -> unsubscribeFormat
+    , classOf[TicketCalled].getSimpleName -> ticketCalledFormat
+    , classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat
+    , classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat
   )
 
   implicit val messagesFormat: JsonReader[PubSub] = { json =>

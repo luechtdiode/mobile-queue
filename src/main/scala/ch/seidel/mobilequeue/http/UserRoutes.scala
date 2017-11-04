@@ -27,8 +27,8 @@ import akka.actor.ActorLogging
 import ch.seidel.mobilequeue.app.Core._
 
 //#user-routes-class
-@Api(value = "/users", produces = "application/json", description = "Operations on users")
-@Path("/users")
+@Api(value = "/api/users", produces = "application/json", description = "Operations on users")
+@Path("/api/users")
 trait UserRoutes extends JsonSupport with RouterLogging {
   //#user-routes-class
 
@@ -47,7 +47,7 @@ trait UserRoutes extends JsonSupport with RouterLogging {
     new ApiResponse(code = 204, message = "No user found")
   ))
   def getUsers = get {
-    pathPrefix("users") {
+    pathPrefix("api" / "users") {
       pathEnd {
         val users: Future[Users] =
           (userRegistryActor ? GetUsers).mapTo[Users]
@@ -66,7 +66,7 @@ trait UserRoutes extends JsonSupport with RouterLogging {
 
   ))
   def addUser = post {
-    pathPrefix("users") {
+    pathPrefix("api" / "users") {
       pathEnd {
         entity(as[User]) { user =>
           val userCreated: Future[ActionPerformed] =
@@ -90,7 +90,7 @@ trait UserRoutes extends JsonSupport with RouterLogging {
   ))
   @Path("{userid}")
   def getUser = get {
-    pathPrefix("users") {
+    pathPrefix("api" / "users") {
       path(LongNumber) { id =>
         //#retrieve-user-info
         val maybeUser: Future[Option[User]] =
@@ -112,7 +112,7 @@ trait UserRoutes extends JsonSupport with RouterLogging {
     new ApiResponse(code = 400, message = "Invalid ID supplied")
   ))
   def deleteUser = delete {
-    pathPrefix("users") {
+    pathPrefix("api" / "users") {
       path(LongNumber) { id =>
         //#users-delete-logic
         val userDeleted: Future[ActionPerformed] =
@@ -130,7 +130,7 @@ trait UserRoutes extends JsonSupport with RouterLogging {
   //#users-get-post
   //#users-get-delete   
   lazy val _userRoutes: Route = {
-    pathPrefix("users") {
+    pathPrefix("api" / "users") {
       //#users-get-delete
       pathEnd {
         get {

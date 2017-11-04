@@ -15,7 +15,6 @@ object TicketRegistryActor {
   final case object GetTickets extends TicketRegistryMessage
   final case class GetNextTickets(next: Int) extends TicketRegistryMessage
   final case object GetAccepted extends TicketRegistryMessage
-  final case class InvokedTicketsSummary(invites: List[(Ticket, Int)])
   final case class CreateTicket(ticket: Ticket, cnt: Int, client: ActorRef) extends TicketRegistryMessage
   final case class GetTicket(id: Long) extends TicketRegistryMessage
   final case class DeleteTicket(id: Long) extends TicketRegistryMessage
@@ -24,6 +23,7 @@ object TicketRegistryActor {
   final case class ActionPerformed(ticket: Ticket, description: String) extends TicketRegistryEvent
   final case class TicketAknowlidged(ticket: Ticket, count: Int) extends TicketRegistryEvent
   final case class TicketCreated(ticket: Ticket, requestingClient: ActorRef) extends TicketRegistryEvent
+  final case class InvokedTicketsSummary(invites: List[(Ticket, Int)]) extends TicketRegistryEvent
 
   val name = "ticketRegistryActor"
   def props: Props = Props[TicketRegistryActor]
@@ -37,6 +37,7 @@ class TicketRegistryActor extends Actor /*with ActorLogging*/ {
   import scala.concurrent.ExecutionContext.Implicits.global
   //  private lazy val askTicketAkTimeout = Timeout(60.seconds)
   var acceptedInvites: List[(Ticket, Int)] = List.empty
+  var skippedInvites: List[(Ticket, Int)] = List.empty
 
   case class TicketClientHolder(count: Int, clients: Set[ActorRef])
 
@@ -47,6 +48,7 @@ class TicketRegistryActor extends Actor /*with ActorLogging*/ {
     case GetNextTickets(cnt) =>
       println("callin GetNextTickets from " + sender())
       acceptedInvites = List.empty
+      skippedInvites = List.empty
       val selected = tickets.toSeq
         .filter(t => t._2.clients.nonEmpty) // select just clients, which are online
         .filter(t => t._2.count <= cnt)
@@ -80,6 +82,35 @@ class TicketRegistryActor extends Actor /*with ActorLogging*/ {
       println(s"Actually accepted invites: ${acceptedInvites.size}")
       sender() ! ActionPerformed(ticket, s"Ticket ${ticket.id} called ${cnt} participants.")
       become(operateWith(tickets - ticket))
+
+    case TicketSkipped(ticket, cnt) =>
+      skippedInvites :+= (ticket, cnt)
+      println("callin GetNextTickets from " + sender())
+      val selected = tickets.toSeq
+        .filter(t => !skippedInvites.exists(_._1 == t._1))
+        .filter(t => t._2.clients.nonEmpty) // select just clients, which are online
+        .filter(t => t._2.count <= cnt)
+        //        .filter(t => t.eventid == eventId)
+        //        .filter(t => t.notAfter > now && t.notBefore < now)
+        .sortBy(t => t._1.id)
+        .foldLeft(List[(Ticket, Int, Int)]()) { (acc, ticketAndActor) =>
+          val actGroupSize = acc.headOption.map(_._2).getOrElse(0)
+          val newGroupSize = ticketAndActor._2.count + actGroupSize
+          if (newGroupSize <= cnt) {
+            (ticketAndActor._1, newGroupSize, ticketAndActor._2.count) +: acc
+          } else {
+            acc
+          }
+        }
+        .takeWhile(pair => pair._2 <= cnt)
+        .filter(t => !acceptedInvites.exists(_._1 == t))
+        .map(pair => (pair._1, pair._3, tickets(pair._1).clients))
+
+      //      implicit val timeout = askTicketAkTimeout;
+      println("calling tickets for " + selected)
+      selected.foreach { pair =>
+        pair._3.foreach { _ ! TicketCalled(pair._1, pair._2) }
+      }      
 
     case CreateTicket(ticket, cnt, clientActor) =>
       val newId = tickets.keys.foldLeft(0L)((acc, ticket) => { math.max(ticket.id, acc) }) + 1L
@@ -119,7 +150,7 @@ class TicketRegistryActor extends Actor /*with ActorLogging*/ {
         val newClientActorList = tickets(ticket).clients + clientActor
         println(s"actual registered clients: ${newClientActorList.size}")
         become(operateWith(tickets - ticket + (ticket -> TicketClientHolder(tickets(ticket).count, newClientActorList))))
-        sender() ! ActionPerformed(ticket, s"Ticket ${ticket.id} activated.")
+        sender() ! TicketReactivated(ticket, tickets(ticket).count)
       }
       if (selectedTickets.nonEmpty) context.watch(clientActor)
 

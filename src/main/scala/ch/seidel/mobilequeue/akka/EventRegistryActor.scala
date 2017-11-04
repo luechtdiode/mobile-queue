@@ -94,7 +94,7 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(DeleteTicket(id))))
 
     // supervision of connected clients
-    case connected @ ClientConnected =>
+    case connected: ClientConnected =>
       ticketsForEventActors.values.foreach(_.forward(connected))
 
     // supervision of child-actors (tickets per event)

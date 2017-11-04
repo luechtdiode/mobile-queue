@@ -1,8 +1,9 @@
 package ch.seidel.mobilequeue.http
 
-//import ch.seidel.mobilequeue.app.BootedCore 
 import akka.http.scaladsl.server.RouteConcatenation
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 
 trait ApiService extends RouteConcatenation
     with UserRoutes
@@ -14,7 +15,9 @@ trait ApiService extends RouteConcatenation
 
   private implicit lazy val _ = ch.seidel.mobilequeue.app.Core.system.dispatcher
 
-  lazy val allroutes = userRoutes ~
+  
+  lazy val allroutes =  
+    userRoutes ~
     eventRoutes ~
     //    ticketRoutes ~
     resourceRoutes ~

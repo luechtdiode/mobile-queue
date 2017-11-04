@@ -10,7 +10,7 @@ import ch.seidel.mobilequeue.akka.ClientActorSupervisor
 trait WebSockets extends Directives {
 
   def websocket = {
-    path("ticketTrigger") {
+    path("api" / "ticketTrigger") {
       handleWebSocketMessages(ClientActorSupervisor.createFlow)
     }
   }
