@@ -66,7 +66,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
         contentType should ===(ContentTypes.`application/json`)
 
         // and we know what message we're expecting back:
-        entityAs[String] should ===("""{"event":{"id":1,"userid":1,"eventTitle":"Testevent","date":"30. Nov 2018"},"description":"Event 1 created."}""")
+        entityAs[String] should ===("""{"event":{"eventTitle":"Testevent","userid":1,"groupsize":10,"id":1,"date":"30. Nov 2018"},"description":"Event 1 created."}""")
       }
     }
     //#testing-post
@@ -82,7 +82,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"event":{"id":1,"userid":1,"eventTitle":"Testevent","date":"30. Nov 2018"},"description":"Event 1 deleted."}""")
+        entityAs[String] should ===("""{"event":{"eventTitle":"Testevent","userid":1,"groupsize":10,"id":1,"date":"30. Nov 2018"},"description":"Event 1 deleted."}""")
       }
     }
     //#actual-test
@@ -98,7 +98,7 @@ class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scal
         contentType should ===(ContentTypes.`application/json`)
 
         // and no entries should be in the list:
-        entityAs[String] should ===("""{"event":{"id":34,"userid":0,"eventTitle":"not existing!","date":""},"description":"Event 34 deleted."}""")
+        entityAs[String] should ===("""{"event":{"eventTitle":"not existing!","userid":0,"groupsize":0,"id":34,"date":""},"description":"Event 34 deleted."}""")
       }
     }
     //#actual-test
