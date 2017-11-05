@@ -21,7 +21,7 @@ import ch.seidel.mobilequeue.akka.EventRegistryActor._
 import ch.seidel.mobilequeue.model._
 import akka.actor.ActorLogging
 import ch.seidel.mobilequeue.app.Core._
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.InvokedTicketsSummary
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.EventTicketsSummary
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetAccepted
 
 //#event-routes-class
@@ -82,8 +82,8 @@ trait EventRoutes extends JsonSupport with RouterLogging {
         } ~
         path(LongNumber / "accepted") { id =>
           get {
-            val maybeEvent: Future[InvokedTicketsSummary] =
-              (eventRegistryActor ? GetEventAccepted(id)).mapTo[InvokedTicketsSummary]
+            val maybeEvent: Future[EventTicketsSummary] =
+              (eventRegistryActor ? GetEventAccepted(id)).mapTo[EventTicketsSummary]
             rejectEmptyResponse {
               complete(maybeEvent)
             }
@@ -92,8 +92,8 @@ trait EventRoutes extends JsonSupport with RouterLogging {
         path(LongNumber / IntNumber) { (id, cnt) =>
           pathEnd {
             get {
-              val maybeEvent: Future[InvokedTicketsSummary] =
-                (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[InvokedTicketsSummary]
+              val maybeEvent: Future[EventTicketsSummary] =
+                (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[EventTicketsSummary]
               rejectEmptyResponse {
                 complete(maybeEvent)
               }

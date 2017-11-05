@@ -8,7 +8,8 @@ case class Event(
   @(ApiModelProperty @field)(value = "unique identifier for the event") id: Long,
   @(ApiModelProperty @field)(value = "unique identifier for the event") userid: Long,
   @(ApiModelProperty @field)(value = "title for the event") eventTitle: String,
-  @(ApiModelProperty @field)(value = "date for the event") date: String
+  @(ApiModelProperty @field)(value = "date for the event") date: String,
+  @(ApiModelProperty @field)(value = "standard group size") groupsize: Int = 10
 )
 
 @ApiModel(description = "A List of event object")
