@@ -31,7 +31,8 @@ object TicketRegistryActor {
     private lazy val closedCnt = invites.filter(t => t.state == Closed).map(_.participants).sum
     
     def toUserTicketSummary(userId: Long, groupSize: Int) = {
-      val (groupIdx, _) = waiting.toSeq.sortBy(_.id).takeWhile(t => t.userid != userId).foldLeft((1, 0)){(acc, ticket) =>
+      val isGroupIdxRelevant = waiting.exists(t => t.userid == userId)
+      val (groupIdx, _) = if (!isGroupIdxRelevant) (0, 0) else waiting.toSeq.sortBy(_.id).takeWhile(t => t.userid != userId).foldLeft((1, 0)){(acc, ticket) =>
         val (groupIdx, groupSize) = acc
         val newGroupSize = groupSize + ticket.participants
         if (newGroupSize > groupSize) {
@@ -154,7 +155,6 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         }
 
     case connected @ ClientConnected(user, _, clientActor) =>
-//      import _
       val selectedTickets = tickets
         .map(_._2)
         .filter(ticketholder => ticketholder.ticket.userid == user.id)
@@ -163,15 +163,14 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
           case Confirmed => false 
           case _ => true
         })
-      selectedTickets.foreach { ticketholder =>
+      if (selectedTickets.nonEmpty) context.watch(clientActor)
+      val newTickets = selectedTickets.foldLeft(tickets) { (acc, ticketholder) =>
         println(s"connecting client-actor to ticket ${ticketholder.ticket}")
         val newClientActorList = ticketholder.clients + clientActor
-//        println(s"actual registered clients: ${newClientActorList.size}")
-        become(operateWith(tickets - ticketholder.ticket.id + (ticketholder.ticket.id -> TicketClientHolder(ticketholder.ticket, newClientActorList))))
         sender() ! TicketReactivated(ticketholder.ticket)
+        acc - ticketholder.ticket.id + (ticketholder.ticket.id -> TicketClientHolder(ticketholder.ticket, newClientActorList))
       }
-      if (selectedTickets.nonEmpty) context.watch(clientActor)
-      sendTicketsSummaries(tickets)
+      workWith(newTickets)
 
     case Terminated(clientActor) =>
       println("unwatching " + clientActor)
