@@ -1,9 +1,13 @@
-<ion-header>
+<ion-header >
   <ion-navbar color="primary">
-    <button ion-button menuToggle>
+    <!-- <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
-    </button>
+    </button> -->
     <ion-title>Mobile Ticket Queue</ion-title>
+    <ion-buttons end>
+    <ion-note *ngIf="(loggedIn() | async) && !!subscribedEvent && !!subscribedTicket">{{loggedInText() | async}}. Subscribed {{subscribedTicket.participants}} on '{{getEventText()}}'</ion-note>
+    <ion-note *ngIf="!((loggedIn() | async))">{{loggedInText() | async}}</ion-note>
+  </ion-buttons>
   </ion-navbar>
 </ion-header>
 
@@ -19,11 +23,11 @@
       <button *ngIf="(loggedIn() | async)" ion-button large block icon-left (click)="logOut()">
         <ion-icon name="log-out"></ion-icon>Logout</button>
     </ion-item>
-    <ion-item *ngIf="!this.subscribedEvent && (loggedIn() | async)">
+    <ion-item *ngIf="!subscribedEvent && (loggedIn() | async)">
       <ion-label>How many people are you?</ion-label>
       <ion-range #count [(ngModel)]="countModel" min="1" max="10" step="1" snaps="true" color="secondary" [disabled]="subscribedEvent"></ion-range>
     </ion-item>
-    <ion-item *ngIf="!this.subscribedEvent && items.length > 1 && (loggedIn() | async)">
+    <ion-item *ngIf="!subscribedEvent && items.length > 1 && (loggedIn() | async)">
       <ion-label>Which event are you waiting for?</ion-label>
       <!-- <ion-searchbar (ionInput)="getItems($event)"></ion-searchbar> -->
       <ion-select #eventId [(ngModel)]="eventModel" [disabled]="subscribedEvent">
@@ -86,9 +90,3 @@
         </ion-card>    
   </ion-list>
 </ion-content>
-
-<ion-footer>
-  <ion-toolbar>
-    <ion-title>{{loggedInText() | async}}</ion-title>
-  </ion-toolbar>
-</ion-footer>

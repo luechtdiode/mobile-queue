@@ -26,6 +26,7 @@ interface EventResponse {
 export class HomePage {
  
   subscribedEvent;
+  subscribedTicket;
 
   eventModel;
   countModel = 1;
@@ -42,10 +43,11 @@ export class HomePage {
       if (!this.subscribedEvent) {
         console.log(msg);
         this.subscribedEvent = msg.ticket.eventid;
+        this.subscribedTicket = msg.ticket;        
         this.countModel = msg.ticket.count;
       }
       this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket registered`;
-      this.lastMessage = `You'll be called back 10 minutes bevore Your Event "${this.getEventText()}" starts!`;
+      this.lastMessage = `You'll be called 10 minutes before Your Event "${this.getEventText()}" starts!`;
       let alert = this.alertCtrl.create({
         title: this.lastMessageTitle,
         subTitle: this.lastMessage,
@@ -55,9 +57,12 @@ export class HomePage {
     });
     ws.ticketActivated.subscribe(msg => {
       console.log(msg);
-      this.subscribedEvent = msg.ticket.eventid;
+      if (!this.subscribedEvent) {
+        this.subscribedEvent = msg.ticket.eventid;
+        this.subscribedTicket = msg.ticket;
+      }
       this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket (re-)activated`;
-      this.lastMessage = `You'll be called back 10 minutes bevore Your Event "${this.getEventText()}" starts!`;
+      this.lastMessage = `You will be called 10 minutes before Your Event "${this.getEventText()}" starts!`;
       let alert = this.alertCtrl.create({
         title: this.lastMessageTitle,
         subTitle: this.lastMessage,
@@ -67,7 +72,7 @@ export class HomePage {
     });
     ws.ticketCalled.subscribe(msg =>{
       this.lastMessageTitle = `${this.formatCurrentMoment()} - Let's go`;
-      this.lastMessage = "Please confirm. Will you be ready in the next 10 minutes?";
+      this.lastMessage = "Please confirm. Will you be ready in 10 minutes?";
       let confirm = this.alertCtrl.create({
         title: this.lastMessageTitle,
         message: this.lastMessage,
@@ -166,7 +171,7 @@ export class HomePage {
         this.lastMessage = '';
         this.ticketSummary = undefined;
       }
-    }).map(c => `User ${this.ws.getUsername()} Connected: ${c}`);
+    }).map(c => c ? `User ${this.ws.getUsername()} Connected` : `User ${this.ws.getUsername()} Disconnected`);
   }
 
   logIn(name) {
@@ -188,6 +193,6 @@ export class HomePage {
     this.subscribedEvent = undefined;
     this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket returned`;
     this.lastMessage = `You're no longer waiting for ${this.getEventText()}!`;
-}
-  
+  }
+
 }
