@@ -23,16 +23,16 @@ object TicketRegistryActor {
   final case class ActionPerformed(ticket: Ticket, description: String) extends TicketRegistryEvent
   final case class TicketCreated(ticket: TicketIssued, requestingClient: ActorRef) extends TicketRegistryEvent
   final case class EventTicketsSummary(invites: Iterable[Ticket]) extends TicketRegistryEvent {
-    private lazy val waiting = invites.filter(t => t.state match {case Issued => true case Called => true case Skipped => true case _ => false})
+    private lazy val waiting = invites.filter(t => t.state match { case Issued => true case Called => true case Skipped => true case _ => false })
     private lazy val waitingCnt = waiting.map(_.participants).sum
-    private lazy val calledCnt = invites.filter(t => t.state  match {case Confirmed => true case Called => true case Skipped => true case _ => false}).map(_.participants).sum
+    private lazy val calledCnt = invites.filter(t => t.state match { case Confirmed => true case Called => true case Skipped => true case _ => false }).map(_.participants).sum
     private lazy val acceptedCnt = invites.filter(t => t.state == Confirmed).map(_.participants).sum
     private lazy val skippedCnt = invites.filter(t => t.state == Skipped).map(_.participants).sum
     private lazy val closedCnt = invites.filter(t => t.state == Closed).map(_.participants).sum
-    
+
     def toUserTicketSummary(userId: Long, groupSize: Int) = {
       val isGroupIdxRelevant = waiting.exists(t => t.userid == userId)
-      val (groupIdx, _) = if (!isGroupIdxRelevant) (0, 0) else waiting.toSeq.sortBy(_.id).takeWhile(t => t.userid != userId).foldLeft((1, 0)){(acc, ticket) =>
+      val (groupIdx, _) = if (!isGroupIdxRelevant) (0, 0) else waiting.toSeq.sortBy(_.id).takeWhile(t => t.userid != userId).foldLeft((1, 0)) { (acc, ticket) =>
         val (groupIdx, groupSize) = acc
         val newGroupSize = groupSize + ticket.participants
         if (newGroupSize > groupSize) {
@@ -41,7 +41,7 @@ object TicketRegistryActor {
           (groupIdx, newGroupSize)
         }
       }
-      UserTicketsSummary(groupIdx, waitingCnt, calledCnt, acceptedCnt, skippedCnt, closedCnt) 
+      UserTicketsSummary(groupIdx, waitingCnt, calledCnt, acceptedCnt, skippedCnt, closedCnt)
     }
   }
 
@@ -52,7 +52,7 @@ object TicketRegistryActor {
 class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   import TicketRegistryActor._
   import context._
-  
+
   import akka.pattern.pipe
   // Get the implicit ExecutionContext from this import
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -61,7 +61,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   val WITHOUT_CLOSING = false;
 
   var requiredGroupSize: Int = event.groupsize
-  
+
   case class TicketClientHolder(ticket: Ticket, clients: Set[ActorRef]) {
     def toNewState(newstate: TicketState) = {
       val ticketCopy = ticket.copy(state = newstate)
@@ -73,18 +73,18 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       clients.foreach(_ ! userTicketSummary)
     }
   }
-  
+
   def sendTicketsSummaries(tickets: Map[Long, TicketClientHolder]) = {
     val ts = EventTicketsSummary(tickets.values.map(_.ticket))
     tickets.values.foreach(_.sendSummaryToClient(ts))
     ts
   }
-  
+
   def workWith(tickets: Map[Long, TicketClientHolder]): EventTicketsSummary = {
     become(operateWith(tickets))
     sendTicketsSummaries(tickets)
   }
-  
+
   def operateWith(tickets: Map[Long, TicketClientHolder] = Map.empty[Long, TicketClientHolder]): Receive = {
     case GetTickets =>
       sender() ! Tickets(tickets.values.map(_.ticket).toSeq)
@@ -97,7 +97,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       sender ! workWith(newTicketCollection)
 
     case GetAccepted =>
-      sender ! EventTicketsSummary(tickets.values.map(_.ticket).filter(t => t.state match {case Confirmed => true case _ => false}))
+      sender ! EventTicketsSummary(tickets.values.map(_.ticket).filter(t => t.state match { case Confirmed => true case _ => false }))
 
     case TicketConfirmed(ticket) =>
       workWith(mapWithNewState(Map(ticket.id -> tickets(ticket.id)), Confirmed, tickets))
@@ -130,7 +130,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
     case CloseTicket(id) =>
       tickets.get(id) match {
         case Some(ticketholder) if (ticketholder.ticket.id > 0) =>
-          val closedTicketHolder = ticketholder.toNewState(Closed) 
+          val closedTicketHolder = ticketholder.toNewState(Closed)
           val td = TicketClosed(closedTicketHolder.ticket)
           parent ! td
           tickets
@@ -140,11 +140,11 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
             .foreach { th =>
               th.clients.foreach(_ ! td)
             }
-            workWith(mapWithNewState(Map(id -> tickets(id)), Closed, tickets))
+          workWith(mapWithNewState(Map(id -> tickets(id)), Closed, tickets))
         case _ =>
-          parent ! TicketClosed(Ticket(id,0,0))
+          parent ! TicketClosed(Ticket(id, 0, 0))
       }
-      
+
     case td: TicketClosed =>
       tickets
         .map(_._2)
@@ -159,8 +159,8 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         .map(_._2)
         .filter(ticketholder => ticketholder.ticket.userid == user.id)
         .filter(ticketholder => ticketholder.ticket.state match {
-          case Closed => false 
-          case Confirmed => false 
+          case Closed => false
+          case Confirmed => false
           case _ => true
         })
       if (selectedTickets.nonEmpty) context.watch(clientActor)
@@ -187,7 +187,6 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   }
 
   def receive = operateWith()
-  
 
   private def selectNextTickets(tickets: Map[Long, TicketClientHolder], withSkipped: Boolean = true): Map[Long, TicketClientHolder] = {
     tickets.toSeq
@@ -221,32 +220,32 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       .map(entry => (entry._1.ticket.id, entry._1))
       .toMap
   }
-  
+
   private def mapWithNewState(ticketsToChange: Map[Long, TicketClientHolder], newState: TicketState, tickets: Map[Long, TicketClientHolder]) = {
-    tickets.map{t =>
+    tickets.map { t =>
       val (id, ticketholder) = t
       ticketsToChange.get(id) match {
         case Some(candidate) =>
           (id, candidate.toNewState(newState))
         case None => (id, ticketholder)
-      }        
+      }
     }
   }
-  
+
   private def callInvitations(candidates: Map[Long, TicketClientHolder], tickets: Map[Long, TicketClientHolder], close: Boolean = true): Map[Long, TicketClientHolder] = {
-      val newTicketCollection = tickets.map{t =>
-        val (id, ticketholder) = t
-        candidates.get(id) match {
-          case Some(candidate) =>
-            val calledTicket = candidate.toNewState(Called)
-            calledTicket.clients.foreach { _ ! TicketCalled(calledTicket.ticket) }
-            (id, calledTicket)
-          case None => ticketholder.ticket.state match {
-            case Confirmed if (close) => (id, ticketholder.toNewState(Closed)) // close confirmed ticket
-            case _ => (id, ticketholder)
-          }
-        }        
+    val newTicketCollection = tickets.map { t =>
+      val (id, ticketholder) = t
+      candidates.get(id) match {
+        case Some(candidate) =>
+          val calledTicket = candidate.toNewState(Called)
+          calledTicket.clients.foreach { _ ! TicketCalled(calledTicket.ticket) }
+          (id, calledTicket)
+        case None => ticketholder.ticket.state match {
+          case Confirmed if (close) => (id, ticketholder.toNewState(Closed)) // close confirmed ticket
+          case _ => (id, ticketholder)
+        }
       }
-      newTicketCollection
-  }  
+    }
+    newTicketCollection
+  }
 }

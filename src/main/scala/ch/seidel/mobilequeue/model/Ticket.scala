@@ -14,7 +14,7 @@ case object Closed extends TicketState // from the issuer closed
 //object TicketState {
 //}
 @ApiModel(description = "A ticket object")
-case class Ticket (
+case class Ticket(
   @(ApiModelProperty @field)(value = "unique identifier for the ticket") id: Long,
   @(ApiModelProperty @field)(value = "identifier for the user") userid: Long,
   @(ApiModelProperty @field)(value = "identifier for the event") eventid: Long,

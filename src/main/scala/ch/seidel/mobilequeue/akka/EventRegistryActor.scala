@@ -91,12 +91,12 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
 
     case CloseEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(CloseTicket(id))))
-    
+
     case td: TicketClosed =>
       ticketsForEventActors.values
         .filter(_ != sender)
         .foreach(_.forward(td))
-        
+
     // supervision of connected clients
     case connected: ClientConnected =>
       ticketsForEventActors.values.foreach(_.forward(connected))

@@ -27,12 +27,12 @@ trait EnrichedJson {
     def asJsonOpt[T](implicit reader: JsonReader[T]): Option[T] = Try(string.parseJson.convertTo[T]).toOption
     def canConvert[T](implicit reader: JsonReader[T]): Boolean = Try(string.parseJson.convertTo[T]).isSuccess
   }
-  
+
   import scala.reflect.ClassTag
 
   import scala.reflect.runtime.universe._
-  
-  def getObjectInstance(clsName: String):AnyRef = {
+
+  def getObjectInstance(clsName: String): AnyRef = {
     val mirror = runtimeMirror(getClass.getClassLoader)
     val module = mirror.staticModule(clsName)
     mirror.reflectModule(module).instance.asInstanceOf[AnyRef]
@@ -51,7 +51,7 @@ trait EnrichedJson {
     }
   }
 
-  def string2trait[T: TypeTag : ClassTag]: Map[JsValue, T] = {
+  def string2trait[T: TypeTag: ClassTag]: Map[JsValue, T] = {
     val clazz = typeOf[T].typeSymbol.asClass
     clazz.knownDirectSubclasses.map { sc =>
       val objectName = sc.toString.stripPrefix("object ")
@@ -59,13 +59,13 @@ trait EnrichedJson {
     }.toMap
   }
 
-  class CaseObjectJsonSupport[T: TypeTag : ClassTag] extends RootJsonFormat[T] {
+  class CaseObjectJsonSupport[T: TypeTag: ClassTag] extends RootJsonFormat[T] {
     val string2T: Map[JsValue, T] = string2trait[T]
-    def defaultValue: T = deserializationError(s"${ implicitly[ClassTag[T]].runtimeClass.getCanonicalName } expected")
+    def defaultValue: T = deserializationError(s"${implicitly[ClassTag[T]].runtimeClass.getCanonicalName} expected")
     override def read(json: JsValue): T = string2T.getOrElse(json, defaultValue)
     override def write(value: T) = JsString(value.toString())
   }
-  
+
 }
 
 trait Hashing {

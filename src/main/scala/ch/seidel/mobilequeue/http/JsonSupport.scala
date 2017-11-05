@@ -14,14 +14,13 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   import DefaultJsonProtocol._
 
   implicit object TicketStateJsonSupport extends CaseObjectJsonSupport[TicketState]
-  
+
   implicit val orderTypeJsonFormat: RootJsonFormat[TicketState] = TicketStateJsonSupport
   implicit val eventJsonFormat = jsonFormat5(Event)
   implicit val eventsJsonFormat = jsonFormat1(Events)
 
   implicit val ticketJsonFormat = jsonFormat5(Ticket)
   implicit val ticketsJsonFormat = jsonFormat1(Tickets)
-  
 
   implicit val userJsonFormat = jsonFormat6(User)
   implicit val usersJsonFormat = jsonFormat1(Users)
@@ -44,7 +43,6 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val summaryFormat = jsonFormat(EventTicketsSummary, "invites")
   implicit val userTicketSummaryFormat = jsonFormat6(UserTicketsSummary)
 
-  
   // support for websocket incoming json-messages
   val caseClassesJsonReader: Map[String, JsonReader[_ <: MobileTicketQueueProtokoll]] = Map(
     classOf[TicketClosed].getSimpleName -> ticketDeletedFormat, classOf[TicketAccepted].getSimpleName -> ticketAcceptedFormat, classOf[TicketIssued].getSimpleName -> ticketIssued, classOf[TicketExpired].getSimpleName -> ticketExpiredFormat, classOf[TicketConfirmed].getSimpleName -> ticketConfirmedFormat, classOf[HelloImOnline].getSimpleName -> helloFormat, classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat, classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat, classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat

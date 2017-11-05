@@ -37,7 +37,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
   val liveticker = context.system.scheduler.schedule(15.second, 15.second) {
     self ! KeepAlive
   }
-  
+
   override def preStart(): Unit = {
     println("Starting client actor")
   }
@@ -47,7 +47,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     println("client actor stopped")
     wsSend.foreach(context.stop)
   }
-  
+
   /**
    * subscribed stage (authenticated + subscribed)
    */
@@ -61,21 +61,21 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       })
 
     // user events
-    case tc: TicketConfirmed => 
+    case tc: TicketConfirmed =>
       handleTicketConfirmed(tc)
       removeObservedTicket(user, tickets, tc.ticket.eventid)
-      
+
     case ts: TicketSkipped => handleTicketSkipped(ts)
-      
+
     // system events
     case tc: TicketCalled => handleTicketCalled(tc)
-    case ta: TicketActionPerformed =>// println(ta)
+    case ta: TicketActionPerformed => // println(ta)
     case KeepAlive => handleKeepAlive
-    
+
     // handle authenticated messages for other subscriptions and take care of handleStop
     case msg: Any => authenticated(user, tickets)(msg)
-  } 
-  
+  }
+
   /**
    * authenticated stage (authenticated but not subscribed)
    */
@@ -88,25 +88,25 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     // system events
     case ta: TicketIssued =>
       val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
-//      println("sending TicketIssued for " + self.path + " to " + wsSend)
+      //      println("sending TicketIssued for " + self.path + " to " + wsSend)
       wsSend.foreach(_ ! tm)
       become(subscribed(user, ticket + ta.ticket))
 
     case tra: TicketReactivated =>
       val tm = TextMessage(tra.toJson.toJsonStringWithType(tra))
-//      println("sending TicketReactivated from " + self.path + " to " + wsSend)
+      //      println("sending TicketReactivated from " + self.path + " to " + wsSend)
       wsSend.foreach(_ ! tm)
       become(subscribed(user, ticket + tra.ticket))
 
     case td: TicketClosed =>
       val tm = TextMessage(td.toJson.toJsonStringWithType(td))
       wsSend.foreach(_ ! tm)
-      
+
     // system actions
     case ts: UserTicketsSummary =>
       val tm = TextMessage(ts.toJson.toJsonStringWithType(ts))
       wsSend.foreach(_ ! tm)
-   
+
     case KeepAlive => handleKeepAlive
 
     // handle authenticated messages for other subscriptions and take care of handleStop
@@ -134,29 +134,28 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     case ref: ActorRef =>
       wsSend = Some(ref)
       wsSend.foreach(_ ! TextMessage("Connection established. Please authenticate with Username and Password!"))
-    
+
     // system actions
     case KeepAlive => println("i'm still alive")
     case ClientActor.Stop => handleStop
     case _: Unit => handleStop
     case _ =>
   }
-  
-  
+
   private def handleStop {
     println("Closing client actor")
-    stop(self)    
+    stop(self)
   }
-  
+
   private def handleKeepAlive {
     wsSend.foreach(_ ! TextMessage("keepAlive"))
-    recallAndCleanupPendingTicketAcks 
+    recallAndCleanupPendingTicketAcks
   }
-  
+
   private def nextPendingStage(ticket: Ticket): Int = {
     pendingTicketAcksCleanupPhases.get(ticket).getOrElse(0) + 1
   }
-  
+
   private def recallAndCleanupPendingTicketAcks {
     // cleanup pending tickets when they're two keepalive cycles unused
     pendingTicketAcksCleanupPhases = pendingTicketAcks.foldLeft(Map[Ticket, Int]()) { (acc, pendingTicket) =>
@@ -172,21 +171,21 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       }
     }
   }
-  
+
   private def handleTicketCalled(tc: TicketCalled) {
-      pendingTicketAcks += (tc -> sender())
-      val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
-      wsSend.foreach(_ ! tm)    
+    pendingTicketAcks += (tc -> sender())
+    val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
+    wsSend.foreach(_ ! tm)
   }
-  
+
   private def handleTicketConfirmed(tcm: TicketConfirmed) {
-    pendingTicketAcks = pendingTicketAcks 
-      .foldLeft(Map[TicketCalled, ActorRef]()) {(acc, entry) =>
+    pendingTicketAcks = pendingTicketAcks
+      .foldLeft(Map[TicketCalled, ActorRef]()) { (acc, entry) =>
         if (entry._1.ticket.id == tcm.ticket.id) {
           entry._2 ! tcm
           val ta = TicketAccepted(tcm.ticket.copy(state = Confirmed))
           val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
-          wsSend.foreach(_ ! tm) 
+          wsSend.foreach(_ ! tm)
           acc
         } else {
           acc + entry;
@@ -201,13 +200,13 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       become(subscribed(user, remainingTickets))
     } else {
       become(authenticated(user, remainingTickets))
-    } 
+    }
     selectedTickets
   }
-    
+
   private def handleTicketSkipped(tsk: TicketSkipped) {
-    pendingTicketAcks = pendingTicketAcks 
-      .foldLeft(Map[TicketCalled, ActorRef]()) {(acc, entry) =>
+    pendingTicketAcks = pendingTicketAcks
+      .foldLeft(Map[TicketCalled, ActorRef]()) { (acc, entry) =>
         if (entry._1.ticket.id == tsk.ticket.id) {
           entry._2 ! tsk
           acc

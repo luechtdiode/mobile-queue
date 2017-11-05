@@ -1,10 +1,13 @@
 name := "mobile-queue"
 
 version := "0.1"
+
 connectInput in run := true
 
 lazy val akkaHttpVersion = "10.0.10"
+
 lazy val akkaVersion    = "2.5.4"
+
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
