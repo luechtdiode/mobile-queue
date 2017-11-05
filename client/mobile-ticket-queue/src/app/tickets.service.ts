@@ -126,7 +126,7 @@ export class TicketsService {
     }
 
     this.getDeviceId();
-    this.connect(undefined, true);
+    this.connect(undefined, (!!this.getUsername() && !!this.getDeviceId()));
   }
 
   private connect(message?: string, autologin: boolean = false) {
