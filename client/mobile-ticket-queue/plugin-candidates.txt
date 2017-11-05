@@ -1,0 +1,32 @@
+http://ionicframework.com/docs/native/device/
+$ ionic cordova plugin add cordova-plugin-device
+$ npm install --save @ionic-native/device
+import { Device } from '@ionic-native/device';
+constructor(private device: Device) { }
+console.log('Device UUID is: ' + this.device.uuid);
+
+http://ionicframework.com/docs/native/geofence/
+$ ionic cordova plugin add cordova-plugin-geofence
+$ npm install --save @ionic-native/geofence
+
+http://ionicframework.com/docs/native/local-notifications/
+$ ionic cordova plugin add de.appplant.cordova.plugin.local-notification
+$ npm install --save @ionic-native/local-notifications
+
+http://ionicframework.com/docs/native/phonegap-local-notification/
+$ ionic cordova plugin add phonegap-plugin-local-notification
+$ npm install --save @ionic-native/phonegap-local-notification
+
+http://ionicframework.com/docs/native/toast/
+$ ionic cordova plugin add cordova-plugin-x-toast
+$ npm install --save @ionic-native/toast
+
+http://ionicframework.com/docs/native/vibration/
+$ ionic cordova plugin add cordova-plugin-vibration
+$ npm install --save @ionic-native/vibration
+
+http://ionicframework.com/docs/native/qr-scanner/
+$ ionic cordova plugin add cordova-plugin-qrscanner
+$ npm install --save @ionic-native/qr-scanner
+
+https://github.com/mapsplugin/cordova-plugin-googlemaps

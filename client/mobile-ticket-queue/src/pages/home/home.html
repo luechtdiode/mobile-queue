@@ -1,0 +1,94 @@
+<ion-header>
+  <ion-navbar color="primary">
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Mobile Ticket Queue</ion-title>
+  </ion-navbar>
+</ion-header>
+
+<ion-content primary-color-text>
+  <ion-list>
+    <ion-item>
+      <ion-label floating>Name</ion-label>
+      <ion-input #issuerName [(ngModel)]="username" [disabled]="loggedIn() | async"></ion-input>
+    </ion-item>
+    <ion-item>
+      <button *ngIf="!(loggedIn() | async) && username" ion-button large block icon-left color="secondary" (click)="logIn(issuerName.value)">
+        <ion-icon name="log-in"></ion-icon>Login</button>
+      <button *ngIf="(loggedIn() | async)" ion-button large block icon-left (click)="logOut()">
+        <ion-icon name="log-out"></ion-icon>Logout</button>
+    </ion-item>
+    <ion-item *ngIf="!this.subscribedEvent && (loggedIn() | async)">
+      <ion-label>How many people are you?</ion-label>
+      <ion-range #count [(ngModel)]="countModel" min="1" max="10" step="1" snaps="true" color="secondary" [disabled]="subscribedEvent"></ion-range>
+    </ion-item>
+    <ion-item *ngIf="!this.subscribedEvent && items.length > 1 && (loggedIn() | async)">
+      <ion-label>Which event are you waiting for?</ion-label>
+      <!-- <ion-searchbar (ionInput)="getItems($event)"></ion-searchbar> -->
+      <ion-select #eventId [(ngModel)]="eventModel" [disabled]="subscribedEvent">
+        <ion-option [value]="item.id" *ngFor="let item of items">
+          {{ item.eventTitle }}
+        </ion-option>
+      </ion-select>
+    </ion-item>
+    <ion-item *ngIf="(loggedIn() | async)">
+      <ion-label>Ticket for </ion-label>
+      <ion-badge item-end>{{countModel}} people</ion-badge>
+    </ion-item>
+    <ion-item *ngIf="(loggedIn() | async)">
+      <ion-label>Event </ion-label>
+      <ion-badge item-end>{{getEventText()}}</ion-badge>
+    </ion-item>
+    <ion-item *ngIf="(loggedIn() | async)">
+      <button [disabled]="this.subscribedEvent || !countModel || countModel < 1 || !eventModel" ion-button large block icon-left color="secondary" (click)="registerTicketForEvent(eventModel, countModel)">
+        <ion-icon name="checkmark-circle"></ion-icon>Issue a ticket</button>
+      <button [disabled]="!this.subscribedEvent" ion-button block icon-left color="danger" (click)="unregisterTicketForEvent()">
+        <ion-icon name="close-circle"></ion-icon>Give my ticket back</button>
+    </ion-item>
+    <ion-card *ngIf="lastMessageTitle">
+        
+          <ion-item>
+            <ion-avatar item-start>
+              <!-- <img src="img/marty-avatar.png"> -->
+              <ion-icon name="information-circle"></ion-icon>
+            </ion-avatar>
+            <h2>{{lastMessageTitle.split(' - ')[1]}}</h2>
+            <p>{{lastMessageTitle.split(' - ')[0]}}</p>
+          </ion-item>
+        
+          <!-- <img src="img/advance-card-bttf.png"> -->
+        
+          <ion-card-content>
+            <p>{{lastMessage}}</p>
+          </ion-card-content>
+        
+          <ion-row>
+            <ion-col>
+              <button ion-button icon-left clear small>
+                <ion-icon name="thumbs-up"></ion-icon>
+                <div>{{ticketSummary?.acceptedCnt}} accepted</div>
+              </button>
+            </ion-col>
+            <ion-col>
+              <button ion-button icon-left clear small>
+                <ion-icon name="text"></ion-icon>
+                <div>{{ticketSummary?.waitingCnt}} waiting</div>
+              </button>
+            </ion-col>
+            <ion-col *ngIf="ticketSummary?.waitingPosition > 0" center text-center>
+              <ion-note>
+                your position {{ticketSummary?.waitingPosition}}
+              </ion-note>
+            </ion-col>
+          </ion-row>
+        
+        </ion-card>    
+  </ion-list>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-title>{{loggedInText() | async}}</ion-title>
+  </ion-toolbar>
+</ion-footer>

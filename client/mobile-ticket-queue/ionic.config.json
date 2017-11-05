@@ -1,0 +1,14 @@
+{
+  "name": "mobile-ticket-queue",
+  "app_id": "ch.seidel.mobile_ticket_queue",
+  "type": "ionic-angular",
+  "integrations": {
+    "cordova": {}
+  },
+  "proxies": [
+    {
+      "path": "/api/",
+      "proxyUrl": "http://localhost:8080/api/"
+    }
+  ]
+}
