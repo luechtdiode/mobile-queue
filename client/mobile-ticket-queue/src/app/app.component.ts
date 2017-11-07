@@ -41,23 +41,6 @@ export class MyApp {
       // Here you can do any higher level native things you might need.
       this.statusBar.styleDefault();
       this.splashScreen.hide();
-      this.backendWS.connected.subscribe(connected => {
-        console.log('connected: ' + connected);
-      });
-      this.backendWS.identified.subscribe(identified => {
-        console.log('identified: ' + identified);
-      });
-      this.backendWS.ticketCreated.subscribe(ticketCreated => {
-        console.log('ticketCreated: ' + ticketCreated);
-      });
-      this.backendWS.ticketCalled.subscribe(ticketCalled => {
-        console.log('ticketCalled: ' + ticketCalled);
-        // this.openPage(this.pages[1]);
-      });
-      this.backendWS.ticketCalled.subscribe(ticketCalled => {
-        console.log('ticketCalled: ' + ticketCalled);
-        // this.openPage(this.pages[2]);
-      });
       
     });
   }

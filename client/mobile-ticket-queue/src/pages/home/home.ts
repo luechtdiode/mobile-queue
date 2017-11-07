@@ -8,6 +8,7 @@ import { AlertController } from 'ionic-angular';
 
 import { TicketsService, UserTicketSummary } from '../../app/tickets.service';
 import { Observable } from 'rxjs/Observable';
+import { Vibration } from '@ionic-native/vibration';
 
 interface Event {
   id: number;
@@ -38,7 +39,7 @@ export class HomePage {
   lastMessage: string = '';
   ticketSummary: UserTicketSummary;
 
-  constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient) {
+  constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient, private vibration :Vibration) {
     ws.ticketCreated.subscribe(msg => {
       if (!this.subscribedEvent) {
         console.log(msg);
@@ -71,6 +72,7 @@ export class HomePage {
       alert.present();
     });
     ws.ticketCalled.subscribe(msg =>{
+      this.vibration.vibrate([1000 , 500 , 2000]);
       this.lastMessageTitle = `${this.formatCurrentMoment()} - Let's go`;
       this.lastMessage = "Please confirm. Will you be ready in 10 minutes?";
       let confirm = this.alertCtrl.create({
@@ -101,12 +103,12 @@ export class HomePage {
       this.subscribedEvent = undefined;
       this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket accepted`;
       this.lastMessage = `We expect you in 10 minutes at ${this.getEventText()}!`;
-      let alert = this.alertCtrl.create({
-        title: this.lastMessageTitle,
-        subTitle: this.lastMessage,
-        buttons: ['OK']
-      });
-      alert.present();
+      // let alert = this.alertCtrl.create({
+      //   title: this.lastMessageTitle,
+      //   subTitle: this.lastMessage,
+      //   buttons: ['OK']
+      // });
+      // alert.present();
     });
     ws.ticketSummaries.subscribe((summary: UserTicketSummary) => {
       this.ticketSummary = summary;
@@ -125,12 +127,17 @@ export class HomePage {
     const host = location.host;
     const path = location.pathname;
     const protocol = location.protocol;
-    const backendUrl  = protocol +"//" + host + path + "api/events";
-    
-    this.http.get(backendUrl).subscribe((data: EventResponse) => {     
+    const backendUrl = protocol +"//" + host + path + "api/events";
+    const onDeviceUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/events";
+    this.http.get(onDeviceUrl).subscribe(
+      (data: EventResponse) => {     
       this.items = data.events;
       this.eventModel = this.items.length > 0 ? this.items[0].id : undefined;
-    });
+    }, (err) =>  this.http.get(backendUrl).subscribe(
+      (data: EventResponse) => {     
+      this.items = data.events;
+      this.eventModel = this.items.length > 0 ? this.items[0].id : undefined;
+    }));
   }
 
   getEventText() {

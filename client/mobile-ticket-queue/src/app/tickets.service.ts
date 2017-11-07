@@ -119,8 +119,8 @@ export class TicketsService {
     const host = location.host;
     const path = location.pathname;
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    if (host.startsWith('localhost')) {
-      this.backendUrl = "ws://localhost:8080/api/ticketTrigger";
+    if (host.startsWith('localhost') || !host || host === '') {
+      this.backendUrl = "wss://38qniweusmuwjkbr.myfritz.net/mbq/api/ticketTrigger";
     } else {
       this.backendUrl = protocol +"//" + host + path + "api/ticketTrigger";
     }

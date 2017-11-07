@@ -9,6 +9,7 @@ import { HomePage } from '../pages/home/home';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { Vibration } from '@ionic-native/vibration';
 import { TicketsService } from './tickets.service';
 import 'rxjs/Rx';
 
@@ -31,6 +32,7 @@ import 'rxjs/Rx';
     StatusBar,
     SplashScreen,
     TicketsService,
+    Vibration,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })

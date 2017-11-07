@@ -7,9 +7,9 @@
   },
   "proxies": [
     {
-      "path": "/api/",
-      "proxyUrl": "https://38qniweusmuwjkbr.myfritz.net/mbq/api/",
-      "proxyUrl2": "http://localhost:8080/api/"
+      "path": "/api",
+      "proxyUrl2": "https://38qniweusmuwjkbr.myfritz.net/mbq/api",
+      "proxyUrl": "http://localhost:8080/api"
     }
   ]
 }
