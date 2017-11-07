@@ -1,5 +1,6 @@
 import { Injectable, EventEmitter } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable } from 'rxjs/Observable';
 
 export interface EventSubscription {
   channel: number;
@@ -40,7 +41,11 @@ export class TicketsService {
   // private tickets: EventSubscription[] = [];
   private websocket: WebSocket;
   private backendUrl: string;
-  
+  private reconnectionObservable: Observable<number>;
+  private explicitClosed = false;
+  private reconnectInterval: number = 5000; // pause between connections
+  private reconnectAttempts: number = 7200; // number of connection attempts
+
   connected = new BehaviorSubject<boolean>(false);
   identified = new BehaviorSubject<boolean>(false);
   ticketCreated = new EventEmitter<TicketMessage>();
@@ -50,13 +55,13 @@ export class TicketsService {
   ticketExpired = new EventEmitter<TicketMessage>();
   ticketDeleted = new EventEmitter<TicketMessage>();
   ticketSummaries = new EventEmitter<UserTicketSummary>();
-  
-  constructor() { 
+
+  constructor() {
     this.init();
   }
 
   login(username) {
-    if (!this.identifiedState) {      
+    if (!this.identifiedState) {
       this.setUsername(username);
       this.sendMessage(JSON.stringify({
         'type': 'HelloImOnline',
@@ -73,9 +78,9 @@ export class TicketsService {
         'channel': parseInt(name),
         'count': parseInt(count)
       }));
-      }
+    }
   }
-  
+
   confirm() {
     if (this.confirmData && this.identifiedState) {
       this.sendMessage(this.confirmData.replace('TicketCalled', 'TicketConfirmed'));
@@ -87,13 +92,13 @@ export class TicketsService {
     if (this.confirmData && this.identifiedState) {
       this.sendMessage(this.confirmData.replace('TicketCalled', 'TicketSkipped'));
       this.confirmData = undefined;
-      }
-    
+    }
+
   }
 
   unsubscribeEvent(name) {
     if (this.identifiedState) {
-        this.sendMessage(JSON.stringify({
+      this.sendMessage(JSON.stringify({
         'type': 'UnSubscribe',
         'channel': parseInt(name)
       }));
@@ -103,15 +108,55 @@ export class TicketsService {
   sendMessage(message) {
     if (!this.websocket) {
       this.connect(message);
-    } else if(this.connectedState) {
+    } else if (this.connectedState) {
       this.websocket.send(message);
     }
   }
 
   disconnectWS() {
+    this.explicitClosed = true;
     if (this.websocket) {
       this.websocket.close();
+    } else {
+      this.close();
     }
+  }
+
+  private close() {
+    this.websocket = undefined;
+    this.identifiedState = false;
+    this.identified.next(this.identifiedState);
+    this.connectedState = false;
+    this.connected.next(this.connectedState);
+  }
+
+  /// reconnection
+  reconnect(): void {
+    console.log('start try reconnection ...');
+    this.reconnectionObservable = Observable.interval(this.reconnectInterval)
+      .takeWhile((v, index) => {
+        // this.websocket = undefined;
+        return index < this.reconnectAttempts && !this.websocket && !this.explicitClosed
+      });
+    const subsr = this.reconnectionObservable.subscribe(
+      () => {
+        console.log('continue with reconnection ...');
+        if (!this.websocket || this.websocket.readyState !== this.websocket.CONNECTING) {
+          this.connect(undefined, true);
+        }
+      },
+      null,
+      () => {
+        /// if the reconnection attempts are failed, then we call complete of our Subject and status
+        this.reconnectionObservable = null;
+        subsr.unsubscribe();
+        if (!this.websocket) {
+          this.disconnectWS();
+          console.log('finish with reconnection (unsuccessfull)');
+        } else {
+          console.log('finish with reconnection (successfull)');
+        }
+      });
   }
 
   private init() {
@@ -122,7 +167,7 @@ export class TicketsService {
     if (host.startsWith('localhost') || !host || host === '') {
       this.backendUrl = "wss://38qniweusmuwjkbr.myfritz.net/mbq/api/ticketTrigger";
     } else {
-      this.backendUrl = protocol +"//" + host + path + "api/ticketTrigger";
+      this.backendUrl = protocol + "//" + host + path + "api/ticketTrigger";
     }
 
     this.getDeviceId();
@@ -130,6 +175,7 @@ export class TicketsService {
   }
 
   private connect(message?: string, autologin: boolean = false) {
+    this.explicitClosed = false;
     this.websocket = new WebSocket(this.backendUrl);
     this.websocket.onopen = () => {
       this.connectedState = true;
@@ -143,12 +189,70 @@ export class TicketsService {
       }
     };
 
-    this.websocket.onclose = () => {
-      this.websocket = undefined;
-      this.identifiedState = false;
-      this.identified.next(this.identifiedState);
-      this.connectedState = false;
-      this.connected.next(this.connectedState);      
+    this.websocket.onclose = (evt: CloseEvent) => {
+      this.close();
+      console.log(evt);
+      switch (evt.code) {
+        case 1001: console.log('Going Away');
+          break;
+        case 1002: console.log('Protocol error');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1003: console.log('Unsupported Data');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1005: console.log('No Status Rcvd');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1006: console.log('Abnormal Closure');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1007: console.log('Invalid frame payload data');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1008: console.log('Policy Violation');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1009: console.log('Message Too Big');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1010: console.log('Mandatory Ext.');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1011: console.log('Internal Server Error');
+          if (!this.explicitClosed) {
+            /// in case of an error with a loss of connection, we restore it
+            this.reconnect();
+          }
+          break;
+        case 1015: console.log('TLS handshake');
+          break;
+        default:
+      }
     };
 
     this.websocket.onmessage = (evt) => {
@@ -162,7 +266,7 @@ export class TicketsService {
       try {
         const message = JSON.parse(evt.data);
         const type = message['type'];
-        switch(type) {
+        switch (type) {
           case 'TicketIssued':
             this.ticketCreated.next(message);
             break;
@@ -193,11 +297,7 @@ export class TicketsService {
     };
 
     this.websocket.onerror = (e) => {
-      this.websocket = undefined;
-      this.identifiedState = false;
-      this.identified.next(this.identifiedState);
-      this.connectedState = false;
-      this.connected.next(this.connectedState); 
+      this.close();
     };
   };
 

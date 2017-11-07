@@ -133,7 +133,7 @@ export class HomePage {
       (data: EventResponse) => {     
       this.items = data.events;
       this.eventModel = this.items.length > 0 ? this.items[0].id : undefined;
-    }, (err) =>  this.http.get(backendUrl).subscribe(
+    }, (err) => this.http.get(backendUrl).subscribe(
       (data: EventResponse) => {     
       this.items = data.events;
       this.eventModel = this.items.length > 0 ? this.items[0].id : undefined;
@@ -165,12 +165,16 @@ export class HomePage {
     this.ws.setUsername(name);
   }
   
-  loggedIn(): Observable<boolean> {
+  connectedState(): Observable<boolean> {
     return this.ws.connected;
   }
 
+  loggedIn(): Observable<boolean> {
+    return this.ws.identified;
+  }
+
   loggedInText(): Observable<any> {
-    return this.ws.connected.do((flag: boolean) => {
+    return this.ws.identified.do((flag: boolean) => {
       if (flag) {
 
       } else {

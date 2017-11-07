@@ -5,8 +5,7 @@
     </button> -->
     <ion-title>Mobile Ticket Queue</ion-title>
     <ion-buttons end>
-    <ion-note *ngIf="(loggedIn() | async) && !!subscribedEvent && !!subscribedTicket">{{loggedInText() | async}}. Subscribed {{subscribedTicket.participants}} on '{{getEventText()}}'</ion-note>
-    <ion-note *ngIf="!((loggedIn() | async))">{{loggedInText() | async}}</ion-note>
+    <ion-note>{{loggedInText() | async}}</ion-note>
   </ion-buttons>
   </ion-navbar>
 </ion-header>
