@@ -12,11 +12,13 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { Vibration } from '@ionic-native/vibration';
 import { TicketsService } from './tickets.service';
 import 'rxjs/Rx';
+import { SettingsPage } from '../pages/settings/settings';
 
 @NgModule({
   declarations: [
     MyApp,
     HomePage,
+    SettingsPage,
   ],
   imports: [
     BrowserModule,
@@ -27,6 +29,7 @@ import 'rxjs/Rx';
   entryComponents: [
     MyApp,
     HomePage,
+    SettingsPage,
   ],
   providers: [
     StatusBar,

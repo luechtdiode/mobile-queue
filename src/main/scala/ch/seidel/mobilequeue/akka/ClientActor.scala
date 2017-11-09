@@ -29,6 +29,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
   import context._
   // these states are bound to the active connection to the user's device and won't be persisted
   var wsSend: Option[ActorRef] = None
+  var pendingKeepAliveAck: Option[Int] = None
   var pendingTicketAcks: Map[TicketCalled, ActorRef] = Map.empty
   var pendingTicketAcksCleanupPhases: Map[Ticket, Int] = Map.empty
 
@@ -137,6 +138,8 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
 
     // system actions
     case KeepAlive => println("i'm still alive")
+    case MessageAck(txt) if (txt.equals("keepAlive")) => handleKeepAliveAck
+
     case ClientActor.Stop => handleStop
     case _: Unit => handleStop
     case _ =>
@@ -149,7 +152,24 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
 
   private def handleKeepAlive {
     wsSend.foreach(_ ! TextMessage("keepAlive"))
-    recallAndCleanupPendingTicketAcks
+    pendingKeepAliveAck = pendingKeepAliveAck.map(_ + 1) match {
+      case Some(i) if (i < 10) =>
+        recallAndCleanupPendingTicketAcks
+        Some(i)
+      case Some(i) if (i >= 10) =>
+        handleStop
+        None
+      case _ =>
+        recallAndCleanupPendingTicketAcks
+        Some(1)
+    }
+  }
+
+  private def handleKeepAliveAck {
+    pendingKeepAliveAck = pendingKeepAliveAck.map(_ - 1) match {
+      case Some(i) if (i > 0) => Some(i)
+      case _ => None
+    }
   }
 
   private def nextPendingStage(ticket: Ticket): Int = {
@@ -222,15 +242,7 @@ object ClientActor extends JsonSupport with EnrichedJson {
 
   import ch.seidel.mobilequeue.app.Core._
 
-  def websocketFlow(actorRef: ActorRef): Flow[Message, MobileTicketQueueProtokoll, Any] =
-    Flow[Message]
-      .mapAsync(1) {
-        case TextMessage.Strict(text) => Future.successful(text.asType[MobileTicketQueueProtokoll])
-        case TextMessage.Streamed(stream) => stream.runFold("")(_ + _).map(s => s.asType[MobileTicketQueueProtokoll])
-        case b: BinaryMessage => throw new Exception("Binary message cannot be handled")
-      }.via(reportErrorsFlow(actorRef))
-
-  def reportErrorsFlow[T](actorRef: ActorRef): Flow[T, T, Any] =
+  def reportErrorsFlow[T]: Flow[T, T, Any] =
     Flow[T]
       .watchTermination()((_, f) => f.onComplete {
         case Failure(cause) =>
@@ -239,6 +251,20 @@ object ClientActor extends JsonSupport with EnrichedJson {
           println(s"WS stream closed")
       })
 
+  def tryMapText(text: String): MobileTicketQueueProtokoll = try {
+    text.asType[MobileTicketQueueProtokoll]
+  } catch {
+    case e: Exception => MessageAck(text)
+  }
+
+  def websocketFlow: Flow[Message, MobileTicketQueueProtokoll, Any] =
+    Flow[Message]
+      .mapAsync(1) {
+        case TextMessage.Strict(text) => Future.successful(tryMapText(text))
+        case TextMessage.Streamed(stream) => stream.runFold("")(_ + _).map(tryMapText(_))
+        case b: BinaryMessage => throw new Exception("Binary message cannot be handled")
+      }.via(reportErrorsFlow)
+
   def createActorSinkSource(clientActor: ActorRef): Flow[Message, Message, Any] = {
 
     val source: Source[Nothing, ActorRef] = Source.actorRef(256, OverflowStrategy.dropNew).mapMaterializedValue { wsSend =>
@@ -246,7 +272,7 @@ object ClientActor extends JsonSupport with EnrichedJson {
       wsSend
     }
 
-    val sink: Graph[SinkShape[Message], Any] = websocketFlow(clientActor).to(Sink.actorRef(clientActor, Stop))
+    val sink = websocketFlow.to(Sink.actorRef(clientActor, Stop))
 
     Flow.fromSinkAndSource(sink, source)
   }

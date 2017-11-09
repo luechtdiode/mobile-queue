@@ -9,6 +9,8 @@ import { AlertController } from 'ionic-angular';
 import { TicketsService, UserTicketSummary } from '../../app/tickets.service';
 import { Observable } from 'rxjs/Observable';
 import { Vibration } from '@ionic-native/vibration';
+import { formatCurrentMoment } from '../../app/utils';
+import { SettingsPage } from '../settings/settings';
 
 interface Event {
   id: number;
@@ -37,6 +39,8 @@ export class HomePage {
 
   lastMessageTitle: string = '';
   lastMessage: string = '';
+  lastMessages: string[] = [];
+  
   ticketSummary: UserTicketSummary;
 
   constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient, private vibration :Vibration) {
@@ -47,7 +51,7 @@ export class HomePage {
         this.subscribedTicket = msg.ticket;        
         this.countModel = msg.ticket.count;
       }
-      this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket registered`;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket registered`;
       this.lastMessage = `You'll be called 10 minutes before Your Event "${this.getEventText()}" starts!`;
       let alert = this.alertCtrl.create({
         title: this.lastMessageTitle,
@@ -62,7 +66,7 @@ export class HomePage {
         this.subscribedEvent = msg.ticket.eventid;
         this.subscribedTicket = msg.ticket;
       }
-      this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket (re-)activated`;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket (re-)activated`;
       this.lastMessage = `You will be called 10 minutes before Your Event "${this.getEventText()}" starts!`;
       let alert = this.alertCtrl.create({
         title: this.lastMessageTitle,
@@ -73,7 +77,7 @@ export class HomePage {
     });
     ws.ticketCalled.subscribe(msg =>{
       this.vibration.vibrate([1000 , 500 , 2000]);
-      this.lastMessageTitle = `${this.formatCurrentMoment()} - Let's go`;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Let's go`;
       this.lastMessage = "Please confirm. Will you be ready in 10 minutes?";
       let confirm = this.alertCtrl.create({
         title: this.lastMessageTitle,
@@ -83,14 +87,14 @@ export class HomePage {
             text: 'Skip to next iteration',
             handler: data => {
               ws.skip();
-              this.lastMessageTitle = `${this.formatCurrentMoment()} - I'm Not ready yet`;
+              this.lastMessageTitle = `${formatCurrentMoment()} - I'm Not ready yet`;
               this.lastMessage = "I skipped my invitation to the next iteration";
             }
           },
           {
             text: 'Confirm',
             handler: data => {
-              this.lastMessageTitle = `${this.formatCurrentMoment()} - Confirmed`;
+              this.lastMessageTitle = `${formatCurrentMoment()} - Confirmed`;
               this.lastMessage = "Yes, i'll be there";
               ws.confirm();
             }
@@ -101,7 +105,7 @@ export class HomePage {
     });
     ws.ticketAccepted.subscribe(msg => {
       this.subscribedEvent = undefined;
-      this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket accepted`;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket accepted`;
       this.lastMessage = `We expect you in 10 minutes at ${this.getEventText()}!`;
       // let alert = this.alertCtrl.create({
       //   title: this.lastMessageTitle,
@@ -114,13 +118,6 @@ export class HomePage {
       this.ticketSummary = summary;
     });
     this.initializeItems();
-  }
-
-  formatCurrentMoment() {
-    const d = new Date();
-    const datestring = ("0" + d.getDate()).slice(-2) + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" +
-    d.getFullYear() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
-    return datestring;
   }
 
   initializeItems() {
@@ -138,6 +135,9 @@ export class HomePage {
       this.items = data.events;
       this.eventModel = this.items.length > 0 ? this.items[0].id : undefined;
     }));
+    if (!this.ws.getUsername) {
+      this.navCtrl.push(SettingsPage);              
+    }
   }
 
   getEventText() {
@@ -185,6 +185,10 @@ export class HomePage {
     }).map(c => c ? `User ${this.ws.getUsername()} Connected` : `User ${this.ws.getUsername()} Disconnected`);
   }
 
+  settings() {
+    this.navCtrl.push(SettingsPage);            
+  }
+
   logIn(name) {
     this.ws.login(name);
     this.initializeItems();
@@ -202,7 +206,7 @@ export class HomePage {
   unregisterTicketForEvent() {
     this.ws.unsubscribeEvent(this.subscribedEvent);
     this.subscribedEvent = undefined;
-    this.lastMessageTitle = `${this.formatCurrentMoment()} - Ticket returned`;
+    this.lastMessageTitle = `${formatCurrentMoment()} - Ticket returned`;
     this.lastMessage = `You're no longer waiting for ${this.getEventText()}!`;
   }
 

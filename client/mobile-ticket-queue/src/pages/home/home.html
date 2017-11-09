@@ -1,28 +1,35 @@
 <ion-header >
   <ion-navbar color="primary">
-    <!-- <button ion-button menuToggle>
+    <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
-    </button> -->
+    </button>
     <ion-title>Mobile Ticket Queue</ion-title>
     <ion-buttons end>
-    <ion-note>{{loggedInText() | async}}</ion-note>
-  </ion-buttons>
+      <ion-note>{{loggedInText() | async}}</ion-note>
+    </ion-buttons>
   </ion-navbar>
 </ion-header>
 
 <ion-content primary-color-text>
   <ion-list>
-    <ion-item>
-      <ion-label floating>Name</ion-label>
-      <ion-input #issuerName [(ngModel)]="username" [disabled]="loggedIn() | async"></ion-input>
-    </ion-item>
-    <ion-item>
-      <button *ngIf="!(loggedIn() | async) && username" ion-button large block icon-left color="secondary" (click)="logIn(issuerName.value)">
-        <ion-icon name="log-in"></ion-icon>Login</button>
-      <button *ngIf="(loggedIn() | async)" ion-button large block icon-left (click)="logOut()">
-        <ion-icon name="log-out"></ion-icon>Logout</button>
-    </ion-item>
-    <ion-item *ngIf="!subscribedEvent && (loggedIn() | async)">
+      <ion-item *ngIf="!username" text-wrap>
+          <h2>It's Your first time here?</h2>
+            <p>Please fill out your Name in the settings-panel to connect to the service.</p>
+          
+          <button ion-button icon-left item-right large color="secondary" (click)="settings()">
+            <ion-icon name="settings"></ion-icon>
+            <div>Settings ...</div>
+          </button>
+        </ion-item>    
+        <ion-item *ngIf="!(loggedIn() | async) && username" text-wrap>
+            <h2>There is no connection to the service.</h2>
+              <p>Please check the settings.</p>
+            <button ion-button icon-left item-right large color="secondary" (click)="settings()">
+              <ion-icon name="settings"></ion-icon>
+              <div>Settings ...</div>
+            </button>
+          </ion-item>    
+      <ion-item *ngIf="!subscribedEvent && (loggedIn() | async)">
       <ion-label>How many people are you?</ion-label>
       <ion-range #count [(ngModel)]="countModel" min="1" max="10" step="1" snaps="true" color="secondary" [disabled]="subscribedEvent"></ion-range>
     </ion-item>
@@ -87,5 +94,6 @@
           </ion-row>
         
         </ion-card>    
-  </ion-list>
+        
+        </ion-list>
 </ion-content>

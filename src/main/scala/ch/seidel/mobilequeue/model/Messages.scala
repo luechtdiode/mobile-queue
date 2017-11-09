@@ -9,6 +9,7 @@ case class Subscribe(channel: Long, count: Int) extends MobileTicketQueueAction 
 case class UnSubscribe(channel: Long) extends MobileTicketQueueAction // -> TicketClosed
 
 sealed trait MobileTicketQueueEvent extends MobileTicketQueueProtokoll
+case class MessageAck(msg: String) extends MobileTicketQueueEvent
 case class TicketIssued(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketReactivated(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketCalled(ticket: Ticket) extends MobileTicketQueueEvent
@@ -17,4 +18,5 @@ case class TicketConfirmed(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketAccepted(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketSkipped(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketClosed(ticket: Ticket) extends MobileTicketQueueEvent
-case class UserTicketsSummary(waitingPosition: Int, waitingCnt: Int, calledCnt: Int, acceptedCnt: Int, skippedCnt: Int, closedCnt: Int) extends MobileTicketQueueEvent
+case class UserTicketsSummary(waitingPosition: Int, waitingCnt: Int, calledCnt: Int,
+  acceptedCnt: Int, skippedCnt: Int, closedCnt: Int) extends MobileTicketQueueEvent

@@ -32,6 +32,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val helloFormat = jsonFormat2(HelloImOnline)
   implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)
+  implicit val messageAckFormat = jsonFormat1(MessageAck)
   implicit val ticketIssued = jsonFormat1(TicketIssued)
   implicit val ticketCalledFormat = jsonFormat1(TicketCalled)
   implicit val ticketReactivatedFormat = jsonFormat1(TicketReactivated)
@@ -45,7 +46,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
 
   // support for websocket incoming json-messages
   val caseClassesJsonReader: Map[String, JsonReader[_ <: MobileTicketQueueProtokoll]] = Map(
-    classOf[TicketClosed].getSimpleName -> ticketDeletedFormat, classOf[TicketAccepted].getSimpleName -> ticketAcceptedFormat, classOf[TicketIssued].getSimpleName -> ticketIssued, classOf[TicketExpired].getSimpleName -> ticketExpiredFormat, classOf[TicketConfirmed].getSimpleName -> ticketConfirmedFormat, classOf[HelloImOnline].getSimpleName -> helloFormat, classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat, classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat, classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat
+    classOf[MessageAck].getSimpleName -> messageAckFormat, classOf[TicketClosed].getSimpleName -> ticketDeletedFormat, classOf[TicketAccepted].getSimpleName -> ticketAcceptedFormat, classOf[TicketIssued].getSimpleName -> ticketIssued, classOf[TicketExpired].getSimpleName -> ticketExpiredFormat, classOf[TicketConfirmed].getSimpleName -> ticketConfirmedFormat, classOf[HelloImOnline].getSimpleName -> helloFormat, classOf[Subscribe].getSimpleName -> subscribeFormat, classOf[UnSubscribe].getSimpleName -> unsubscribeFormat, classOf[TicketCalled].getSimpleName -> ticketCalledFormat, classOf[TicketReactivated].getSimpleName -> ticketReactivatedFormat, classOf[TicketSkipped].getSimpleName -> ticketSkippedFormat
   )
 
   implicit val messagesFormat: JsonReader[MobileTicketQueueProtokoll] = { json =>

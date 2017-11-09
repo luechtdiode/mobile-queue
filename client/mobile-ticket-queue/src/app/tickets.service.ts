@@ -1,6 +1,7 @@
 import { Injectable, EventEmitter } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
+import { formatCurrentMoment } from './utils';
 
 export interface EventSubscription {
   channel: number;
@@ -43,8 +44,8 @@ export class TicketsService {
   private backendUrl: string;
   private reconnectionObservable: Observable<number>;
   private explicitClosed = false;
-  private reconnectInterval: number = 5000; // pause between connections
-  private reconnectAttempts: number = 7200; // number of connection attempts
+  private reconnectInterval: number = 30000; // pause between connections
+  private reconnectAttempts: number = 480; // number of connection attempts
 
   connected = new BehaviorSubject<boolean>(false);
   identified = new BehaviorSubject<boolean>(false);
@@ -55,13 +56,20 @@ export class TicketsService {
   ticketExpired = new EventEmitter<TicketMessage>();
   ticketDeleted = new EventEmitter<TicketMessage>();
   ticketSummaries = new EventEmitter<UserTicketSummary>();
+  logMessages = new EventEmitter<string>();
+  lastMessages: string[] = [];
 
   constructor() {
     this.init();
   }
 
+  get stopped(): boolean {
+    return this.explicitClosed;
+  }
+
   login(username) {
     if (!this.identifiedState) {
+      this.lastMessages = [];
       this.setUsername(username);
       this.sendMessage(JSON.stringify({
         'type': 'HelloImOnline',
@@ -130,45 +138,66 @@ export class TicketsService {
     this.connected.next(this.connectedState);
   }
 
+  private isWebsocketConnected(): boolean {
+    return this.websocket && this.websocket.readyState === this.websocket.OPEN;
+  }
+  private isWebsocketConnecting(): boolean {
+    return this.websocket && this.websocket.readyState === this.websocket.CONNECTING;
+  }
+  private shouldConnectAgain(): boolean {
+    return !(this.isWebsocketConnected() || this.isWebsocketConnecting());
+  }
+
   /// reconnection
   reconnect(): void {
-    console.log('start try reconnection ...');
-    this.reconnectionObservable = Observable.interval(this.reconnectInterval)
-      .takeWhile((v, index) => {
-        // this.websocket = undefined;
-        return index < this.reconnectAttempts && !this.websocket && !this.explicitClosed
-      });
-    const subsr = this.reconnectionObservable.subscribe(
-      () => {
-        console.log('continue with reconnection ...');
-        if (!this.websocket || this.websocket.readyState !== this.websocket.CONNECTING) {
-          this.connect(undefined, true);
-        }
-      },
-      null,
-      () => {
-        /// if the reconnection attempts are failed, then we call complete of our Subject and status
-        this.reconnectionObservable = null;
-        subsr.unsubscribe();
-        if (!this.websocket) {
-          this.disconnectWS();
-          console.log('finish with reconnection (unsuccessfull)');
-        } else {
-          console.log('finish with reconnection (successfull)');
-        }
-      });
+    if (!this.reconnectionObservable) {
+      this.logMessages.next('start try reconnection ...');
+      this.reconnectionObservable = Observable.interval(this.reconnectInterval)
+        .takeWhile((v, index) => {
+          // this.websocket = undefined;
+          return index < this.reconnectAttempts && !this.explicitClosed
+        });
+      const subsr = this.reconnectionObservable.subscribe(
+        () => {
+          if (this.shouldConnectAgain()) {
+            this.logMessages.next('continue with reconnection ...');
+            this.connect(undefined, true);
+          }
+        },
+        null,
+        () => {
+          /// if the reconnection attempts are failed, then we call complete of our Subject and status
+          this.reconnectionObservable = null;
+          subsr.unsubscribe();
+          if (this.isWebsocketConnected()) {
+            this.logMessages.next('finish with reconnection (successfull)');
+          } else if (this.isWebsocketConnecting()) {
+            this.logMessages.next('continue with reconnection (CONNECTING)');
+          } else if (!this.websocket || this.websocket.CLOSING || this.websocket.CLOSED) {
+            this.disconnectWS();
+            this.logMessages.next('finish with reconnection (unsuccessfull)');
+          }
+        });
+    }
   }
 
   private init() {
-    console.log('init');
+    this.logMessages.subscribe(msg => {
+      this.lastMessages.push(formatCurrentMoment(true) + ` - ${msg}`);
+      this.lastMessages = this.lastMessages.slice(Math.max(this.lastMessages.length - 50, 0));
+    });
+    this.logMessages.next('init');
     const host = location.host;
     const path = location.pathname;
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    if (host.startsWith('localhost') || !host || host === '') {
+    if (!host || host === '') {
       this.backendUrl = "wss://38qniweusmuwjkbr.myfritz.net/mbq/api/ticketTrigger";
-    } else {
+    } else if (host.startsWith('localhost')) {
+        this.backendUrl = "ws://localhost:8080/api/ticketTrigger";
+      } else {
       this.backendUrl = protocol + "//" + host + path + "api/ticketTrigger";
     }
+    this.logMessages.next('init with ' + this.backendUrl);
 
     this.getDeviceId();
     this.connect(undefined, (!!this.getUsername() && !!this.getDeviceId()));
@@ -191,76 +220,87 @@ export class TicketsService {
 
     this.websocket.onclose = (evt: CloseEvent) => {
       this.close();
-      console.log(evt);
       switch (evt.code) {
-        case 1001: console.log('Going Away');
+        case 1001: this.logMessages.next('Going Away');
           break;
-        case 1002: console.log('Protocol error');
+        case 1002: this.logMessages.next('Protocol error');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1003: console.log('Unsupported Data');
+        case 1003: this.logMessages.next('Unsupported Data');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1005: console.log('No Status Rcvd');
+        case 1005: this.logMessages.next('No Status Rcvd');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1006: console.log('Abnormal Closure');
+        case 1006: this.logMessages.next('Abnormal Closure');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1007: console.log('Invalid frame payload data');
+        case 1007: this.logMessages.next('Invalid frame payload data');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1008: console.log('Policy Violation');
+        case 1008: this.logMessages.next('Policy Violation');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1009: console.log('Message Too Big');
+        case 1009: this.logMessages.next('Message Too Big');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1010: console.log('Mandatory Ext.');
+        case 1010: this.logMessages.next('Mandatory Ext.');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1011: console.log('Internal Server Error');
+        case 1011: this.logMessages.next('Internal Server Error');
           if (!this.explicitClosed) {
             /// in case of an error with a loss of connection, we restore it
             this.reconnect();
           }
           break;
-        case 1015: console.log('TLS handshake');
+        case 1015: this.logMessages.next('TLS handshake');
           break;
         default:
       }
     };
 
-    this.websocket.onmessage = (evt) => {
+    const sendMessageAck = (evt: MessageEvent) => {
+      this.sendMessage(JSON.stringify({
+        'type': 'MessageAck',
+        'msg': evt.data
+      }));
+    };
+
+    this.websocket.onmessage = (evt: MessageEvent) => {
+      if (evt.data.startsWith('Please authenticate')) {
+        return;
+      }
       if (evt.data === 'keepAlive') {
+        sendMessageAck(evt);
         return;
       }
       if (this.connectedState && evt.data.startsWith('deviceId=')) {
         this.setDeviceId(evt.data.split('=')[1]);
+        sendMessageAck(evt);
         return;
       }
       try {
@@ -289,26 +329,26 @@ export class TicketsService {
             this.ticketSummaries.next(message);
             break;
           default:
-            console.log(message);
+            this.logMessages.next(message);
         }
       } catch (e) {
-        // console.log(e);
+        this.logMessages.next(e + ": " + evt.data);
       }
     };
 
-    this.websocket.onerror = (e) => {
+    this.websocket.onerror = (e: ErrorEvent) => {
       this.close();
     };
   };
 
-  public setUsername(n) {
+  public setUsername(n: string) {
     this.username = n;
     if (typeof (Storage) !== "undefined") {
       localStorage.username = n;
     }
   }
 
-  public getUsername() {
+  public getUsername(): string {
     if (typeof (Storage) !== "undefined") {
       this.username = localStorage.username;
     }
