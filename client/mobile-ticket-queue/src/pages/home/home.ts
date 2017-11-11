@@ -49,7 +49,7 @@ export class HomePage {
         console.log(msg);
         this.subscribedEvent = msg.ticket.eventid;
         this.subscribedTicket = msg.ticket;        
-        this.countModel = msg.ticket.count;
+        this.countModel = msg.ticket.participants;
       }
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket registered`;
       this.lastMessage = `You'll be called 10 minutes before Your Event "${this.getEventText()}" starts!`;

@@ -43,9 +43,11 @@ export class TicketsService {
   private websocket: WebSocket;
   private backendUrl: string;
   private reconnectionObservable: Observable<number>;
-  private explicitClosed = false;
+  private explicitClosed = true;
   private reconnectInterval: number = 30000; // pause between connections
   private reconnectAttempts: number = 480; // number of connection attempts
+  private lstKeepAliveReceived: number = 0;
+  private keepAliveObserverTimerToken;
 
   connected = new BehaviorSubject<boolean>(false);
   identified = new BehaviorSubject<boolean>(false);
@@ -61,10 +63,28 @@ export class TicketsService {
 
   constructor() {
     this.init();
+    this.startKeepAliveObservation();
   }
 
   get stopped(): boolean {
     return this.explicitClosed;
+  }
+
+  startKeepAliveObservation() {
+    this.keepAliveObserverTimerToken = setTimeout(() => {
+      const yet = new Date().getTime();
+      const lastSeenSince = yet - this.lstKeepAliveReceived;
+      if (!this.explicitClosed
+         && !this.reconnectionObservable 
+         && lastSeenSince > this.reconnectInterval) {
+          this.logMessages.next('connection verified since ' + lastSeenSince + 'ms. It seems to be dead and need to be reconnected!');
+          this.disconnectWS(false);
+          this.reconnect();
+      } else {
+        this.logMessages.next('connection verified since ' + lastSeenSince + 'ms');
+      }
+      this.startKeepAliveObservation();
+    }, this.reconnectInterval);    
   }
 
   login(username) {
@@ -121,8 +141,8 @@ export class TicketsService {
     }
   }
 
-  disconnectWS() {
-    this.explicitClosed = true;
+  disconnectWS(explicit = true) {
+    this.explicitClosed = explicit;
     if (this.websocket) {
       this.websocket.close();
     } else {
@@ -154,7 +174,6 @@ export class TicketsService {
       this.logMessages.next('start try reconnection ...');
       this.reconnectionObservable = Observable.interval(this.reconnectInterval)
         .takeWhile((v, index) => {
-          // this.websocket = undefined;
           return index < this.reconnectAttempts && !this.explicitClosed
         });
       const subsr = this.reconnectionObservable.subscribe(
@@ -291,10 +310,11 @@ export class TicketsService {
     };
 
     this.websocket.onmessage = (evt: MessageEvent) => {
-      if (evt.data.startsWith('Please authenticate')) {
+      if (evt.data.startsWith('Connection established.')) {
         return;
       }
       if (evt.data === 'keepAlive') {
+        this.lstKeepAliveReceived = new Date().getTime();
         sendMessageAck(evt);
         return;
       }
@@ -329,7 +349,7 @@ export class TicketsService {
             this.ticketSummaries.next(message);
             break;
           default:
-            this.logMessages.next(message);
+            this.logMessages.next('unknown message: ' + evt.data);
         }
       } catch (e) {
         this.logMessages.next(e + ": " + evt.data);
