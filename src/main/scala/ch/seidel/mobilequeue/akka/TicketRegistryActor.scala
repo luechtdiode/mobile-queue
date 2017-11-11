@@ -233,7 +233,11 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   }
 
   private def callInvitations(candidates: Map[Long, TicketClientHolder], tickets: Map[Long, TicketClientHolder], close: Boolean = true): Map[Long, TicketClientHolder] = {
-    val newTicketCollection = tickets.map { t =>
+    val newTicketCollection = tickets.filter(th => th._2.ticket.state match {
+      // sort out closed first to keep memory clean
+      case Closed => false
+      case _ => true
+    }).map { t =>
       val (id, ticketholder) = t
       candidates.get(id) match {
         case Some(candidate) =>
