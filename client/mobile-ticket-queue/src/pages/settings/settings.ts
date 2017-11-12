@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController, NavParams } from 'ionic-angular';
-import { formatCurrentMoment } from '../../app/utils';
+import { NavController } from 'ionic-angular';
 import { TicketsService } from '../../app/tickets.service';
 import { Observable } from 'rxjs/Observable';
 
@@ -9,23 +8,14 @@ import { Observable } from 'rxjs/Observable';
   templateUrl: 'settings.html',
 })
 export class SettingsPage {
+  subscr: any;
 
   get lastMessages():string[] {
     return this.ws.lastMessages;
   };
 
   constructor(public navCtrl: NavController, public ws: TicketsService) {
-    // ws.logMessages.subscribe(msg => {
-    //   console.log(msg);
-    //   // this.lastMessages.push(formatCurrentMoment(true) + ` - ${msg}`);
-    //   // this.lastMessages = this.lastMessages.slice(Math.max(this.lastMessages.length - 10, 0));
-    // });
   }
-
-  ionViewDidLoad() {
-    console.log('ionViewDidLoad SettingsPage');
-  }
-
 
   get username() {
     return this.ws.getUsername();
@@ -51,6 +41,13 @@ export class SettingsPage {
   }
 
   logIn(name) {
+    this.subscr = this.ws.identified.subscribe(e => {
+      if (e) {
+        this.navCtrl.pop();
+
+        this.subscr.unsubscribe();
+      }
+    });
     this.ws.login(name);
   }
 

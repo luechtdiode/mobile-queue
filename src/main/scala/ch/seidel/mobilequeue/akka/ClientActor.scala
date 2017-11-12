@@ -89,14 +89,18 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     // system events
     case ta: TicketIssued =>
       val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
-      //      println("sending TicketIssued for " + self.path + " to " + wsSend)
       wsSend.foreach(_ ! tm)
       become(subscribed(user, ticket + ta.ticket))
 
     case tra: TicketReactivated =>
       val tm = TextMessage(tra.toJson.toJsonStringWithType(tra))
-      //      println("sending TicketReactivated from " + self.path + " to " + wsSend)
-      wsSend.foreach(_ ! tm)
+      tra.ticket.state match {
+        case Called =>
+          wsSend.foreach(_ ! tm)
+          handleTicketCalled(TicketCalled(tra.ticket))
+        case _ =>
+          wsSend.foreach(_ ! tm)
+      }
       become(subscribed(user, ticket + tra.ticket))
 
     case td: TicketClosed =>

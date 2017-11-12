@@ -18,5 +18,5 @@ case class TicketConfirmed(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketAccepted(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketSkipped(ticket: Ticket) extends MobileTicketQueueEvent
 case class TicketClosed(ticket: Ticket) extends MobileTicketQueueEvent
-case class UserTicketsSummary(waitingPosition: Int, waitingCnt: Int, calledCnt: Int,
+case class UserTicketsSummary(eventid: Long, waitingPosition: Int, waitingCnt: Int, calledCnt: Int,
   acceptedCnt: Int, skippedCnt: Int, closedCnt: Int) extends MobileTicketQueueEvent

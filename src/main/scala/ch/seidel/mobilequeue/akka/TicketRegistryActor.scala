@@ -30,7 +30,7 @@ object TicketRegistryActor {
     private lazy val skippedCnt = invites.filter(t => t.state == Skipped).map(_.participants).sum
     private lazy val closedCnt = invites.filter(t => t.state == Closed).map(_.participants).sum
 
-    def toUserTicketSummary(userId: Long, groupSize: Int) = {
+    def toUserTicketSummary(eventId: Long, userId: Long, groupSize: Int) = {
       val isGroupIdxRelevant = waiting.exists(t => t.userid == userId)
       val (groupIdx, _) = if (!isGroupIdxRelevant) (0, 0) else waiting.toSeq.sortBy(_.id).takeWhile(t => t.userid != userId).foldLeft((1, 0)) { (acc, ticket) =>
         val (groupIdx, groupSize) = acc
@@ -41,7 +41,7 @@ object TicketRegistryActor {
           (groupIdx, newGroupSize)
         }
       }
-      UserTicketsSummary(groupIdx, waitingCnt, calledCnt, acceptedCnt, skippedCnt, closedCnt)
+      UserTicketsSummary(eventId, groupIdx, waitingCnt, calledCnt, acceptedCnt, skippedCnt, closedCnt)
     }
   }
 
@@ -69,7 +69,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       thcopy
     }
     def sendSummaryToClient(summary: EventTicketsSummary) {
-      val userTicketSummary = summary.toUserTicketSummary(ticket.userid, requiredGroupSize)
+      val userTicketSummary = summary.toUserTicketSummary(event.id, ticket.userid, requiredGroupSize)
       clients.foreach(_ ! userTicketSummary)
     }
   }

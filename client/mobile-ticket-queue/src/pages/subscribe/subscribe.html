@@ -1,0 +1,21 @@
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Subscribe {{event.eventTitle}}</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content>  
+    <ion-item-divider color="light"><h1>How many people are you?</h1>
+        <ion-badge item-end><h2>{{countModel}}</h2></ion-badge>
+      </ion-item-divider>
+  <ion-item>
+      <ion-range #count [(ngModel)]="countModel" min="1" max="10" step="1" snaps="true" color="secondary"></ion-range>
+  </ion-item>
+  <button ion-button large block icon-left color="secondary" (click)="registerTicketForEvent(countModel)">
+      <ion-icon name="checkmark-circle"></ion-icon>Issue a ticket</button>
+  <button ion-button large block icon-left color="primary" (click)="popView()">
+      Cancel</button>
+</ion-content>

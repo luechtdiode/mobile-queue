@@ -1,22 +1,34 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 import { formatCurrentMoment } from './utils';
+import { ReplaySubject } from 'rxjs';
 
-export interface EventSubscription {
-  channel: number;
-  description: string;
-  tickets: number;
+
+export interface Event {
+  id: number;
+  date: Date;
+  eventTitle: string;
+  userid: number;
+}
+export interface EventResponse {
+  events: Event[];
 }
 
 export interface Ticket {
+  id?: number;
   state?: string;
   participants?: number;
   userid?: number;
   eventid?: number;
 }
+export interface EventSubscription {
+  description?: string;
+  ticket?: Ticket;
+}
 
 export interface UserTicketSummary {
+  eventid?: number;
   skippedcnt?: number;
   waitingPosition?: number;
   waitingCnt?: number;
@@ -38,7 +50,6 @@ export class TicketsService {
   private username;
   private identifiedState = false;
   private connectedState = false;
-  private confirmData;
   // private tickets: EventSubscription[] = [];
   private websocket: WebSocket;
   private backendUrl: string;
@@ -51,19 +62,17 @@ export class TicketsService {
 
   connected = new BehaviorSubject<boolean>(false);
   identified = new BehaviorSubject<boolean>(false);
-  ticketCreated = new EventEmitter<TicketMessage>();
-  ticketActivated = new EventEmitter<TicketMessage>();
-  ticketCalled = new EventEmitter<TicketMessage>();
-  ticketAccepted = new EventEmitter<TicketMessage>();
-  ticketExpired = new EventEmitter<TicketMessage>();
-  ticketDeleted = new EventEmitter<TicketMessage>();
-  ticketSummaries = new EventEmitter<UserTicketSummary>();
-  logMessages = new EventEmitter<string>();
+  ticketCreated = new ReplaySubject<TicketMessage>(10);
+  ticketActivated = new ReplaySubject<TicketMessage>(10);
+  ticketCalled = new ReplaySubject<TicketMessage>(10);
+  ticketAccepted = new ReplaySubject<TicketMessage>(10);
+  ticketExpired = new ReplaySubject<TicketMessage>(10);
+  ticketDeleted = new ReplaySubject<TicketMessage>(10);
+  ticketSummaries = new ReplaySubject<UserTicketSummary>();
+  logMessages = new BehaviorSubject<string>("");
   lastMessages: string[] = [];
 
   constructor() {
-    this.init();
-    this.startKeepAliveObservation();
   }
 
   get stopped(): boolean {
@@ -109,26 +118,25 @@ export class TicketsService {
     }
   }
 
-  confirm() {
-    if (this.confirmData && this.identifiedState) {
-      this.sendMessage(this.confirmData.replace('TicketCalled', 'TicketConfirmed'));
-      this.confirmData = undefined;
-    }
+  confirm(ticketCalled: Ticket) {
+    this.sendMessage(JSON.stringify({
+      'type': 'TicketConfirmed',
+      'ticket': ticketCalled
+    }));
   }
 
-  skip() {
-    if (this.confirmData && this.identifiedState) {
-      this.sendMessage(this.confirmData.replace('TicketCalled', 'TicketSkipped'));
-      this.confirmData = undefined;
-    }
-
+  skip(ticketCalled: Ticket) {
+    this.sendMessage(JSON.stringify({
+      'type': 'TicketSkipped',
+      'ticket': ticketCalled
+    }));
   }
 
-  unsubscribeEvent(name) {
+  unsubscribeEvent(eventId) {
     if (this.identifiedState) {
       this.sendMessage(JSON.stringify({
         'type': 'UnSubscribe',
-        'channel': parseInt(name)
+        'channel': parseInt(eventId)
       }));
     }
   }
@@ -200,7 +208,7 @@ export class TicketsService {
     }
   }
 
-  private init() {
+  public init() {
     this.logMessages.subscribe(msg => {
       this.lastMessages.push(formatCurrentMoment(true) + ` - ${msg}`);
       this.lastMessages = this.lastMessages.slice(Math.max(this.lastMessages.length - 50, 0));
@@ -220,6 +228,7 @@ export class TicketsService {
 
     this.getDeviceId();
     this.connect(undefined, (!!this.getUsername() && !!this.getDeviceId()));
+    this.startKeepAliveObservation();    
   }
 
   private connect(message?: string, autologin: boolean = false) {
@@ -310,11 +319,11 @@ export class TicketsService {
     };
 
     this.websocket.onmessage = (evt: MessageEvent) => {
+      this.lstKeepAliveReceived = new Date().getTime();
       if (evt.data.startsWith('Connection established.')) {
         return;
       }
       if (evt.data === 'keepAlive') {
-        this.lstKeepAliveReceived = new Date().getTime();
         sendMessageAck(evt);
         return;
       }
@@ -334,8 +343,7 @@ export class TicketsService {
             this.ticketActivated.next(message);
             break;
           case 'TicketCalled':
-            this.confirmData = evt.data;
-            this.ticketCalled.next(this.confirmData);
+            this.ticketCalled.next(message);
             break;
           case 'TicketAccepted':
             this.ticketAccepted.next(message);

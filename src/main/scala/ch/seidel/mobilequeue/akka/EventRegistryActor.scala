@@ -44,7 +44,7 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
 
     case CreateEvent(event) =>
       val withId = event.copy(id = events.foldLeft(0L)((acc, event) => { math.max(event._1, acc) }) + 1L)
-      val tickets = context.actorOf(TicketRegistryActor.props(event), s"${TicketRegistryActor.name}-${withId.id}")
+      val tickets = context.actorOf(TicketRegistryActor.props(withId), s"${TicketRegistryActor.name}-${withId.id}")
       watch(tickets)
       become(operateWith(ticketsForEventActors + (withId -> tickets), events + (withId.id -> withId)))
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")

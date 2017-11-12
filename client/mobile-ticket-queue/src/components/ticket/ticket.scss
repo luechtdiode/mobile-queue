@@ -1,0 +1,25 @@
+ticket {
+  .icon-block {
+    display: inline-block;
+    font-size: 35px;
+    vertical-align: top;
+   }
+   
+   .text{
+     display: inline-block;
+     vertical-align: top;
+   }
+
+   .subscribed {
+    color: rgb(58, 199, 58);    
+   }
+   
+   .accepted {
+    color: rgb(216, 21, 21);    
+   }
+
+   .top-aligned {
+    align-items: flex-start;
+    align-self: flex-start;
+   }
+}

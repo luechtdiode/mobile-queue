@@ -13,12 +13,16 @@ import { Vibration } from '@ionic-native/vibration';
 import { TicketsService } from './tickets.service';
 import 'rxjs/Rx';
 import { SettingsPage } from '../pages/settings/settings';
+import { TicketComponent } from '../components/ticket/ticket';
+import { SubscribePage } from '../pages/subscribe/subscribe';
 
 @NgModule({
   declarations: [
     MyApp,
+    TicketComponent,
     HomePage,
     SettingsPage,
+    SubscribePage,
   ],
   imports: [
     BrowserModule,
@@ -29,6 +33,7 @@ import { SettingsPage } from '../pages/settings/settings';
   entryComponents: [
     MyApp,
     HomePage,
+    SubscribePage,
     SettingsPage,
   ],
   providers: [
