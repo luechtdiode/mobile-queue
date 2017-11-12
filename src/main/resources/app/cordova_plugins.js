@@ -132,6 +132,21 @@ module.exports = [
         "file": "plugins/cordova-plugin-x-toast/test/tests.js",
         "id": "cordova-plugin-x-toast.tests",
         "pluginId": "cordova-plugin-x-toast"
+    },
+    {
+        "file": "plugins/cordova-plugin-background-mode/www/background-mode.js",
+        "id": "cordova-plugin-background-mode.BackgroundMode",
+        "pluginId": "cordova-plugin-background-mode",
+        "clobbers": [
+            "cordova.plugins.backgroundMode",
+            "plugin.backgroundMode"
+        ]
+    },
+    {
+        "file": "plugins/cordova-plugin-background-mode/src/browser/BackgroundModeProxy.js",
+        "id": "cordova-plugin-background-mode.BackgroundMode.Proxy",
+        "pluginId": "cordova-plugin-background-mode",
+        "runs": true
     }
 ];
 module.exports.metadata = 
@@ -148,7 +163,8 @@ module.exports.metadata =
     "cordova-plugin-compat": "1.2.0",
     "cordova-plugin-camera": "2.4.1",
     "cordova-plugin-image-picker": "1.1.1",
-    "cordova-plugin-x-toast": "2.6.0"
+    "cordova-plugin-x-toast": "2.6.0",
+    "cordova-plugin-background-mode": "0.7.2"
 }
 // BOTTOM OF METADATA
 });

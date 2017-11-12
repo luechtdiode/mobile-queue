@@ -6,6 +6,7 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { HomePage } from '../pages/home/home';
 import { TicketsService } from './tickets.service';
 import { SettingsPage } from '../pages/settings/settings';
+import { LocalNotifications } from '@ionic-native/local-notifications';
 
 @Component({
   templateUrl: 'app.html'
@@ -21,7 +22,7 @@ export class MyApp {
     public platform: Platform, 
     public statusBar: StatusBar, 
     public splashScreen: SplashScreen, 
-    public backendWS: TicketsService) {
+    public backendWS: TicketsService, private localNotifications: LocalNotifications) {
 
     this.initializeApp();
 
@@ -30,7 +31,6 @@ export class MyApp {
       { title: 'Home', component: HomePage },
       { title: 'Settings', component: SettingsPage },
     ];
-
   }
 
   initializeApp() {
@@ -39,7 +39,9 @@ export class MyApp {
       // Here you can do any higher level native things you might need.
       this.statusBar.styleDefault();
       this.splashScreen.hide();
-      
+      if (this.platform.is('cordova')) {
+        this.localNotifications.registerPermission();
+      }
     });
   }
 

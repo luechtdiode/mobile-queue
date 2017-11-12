@@ -2,13 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 
 import { HttpClient } from '@angular/common/http';
 import { NavController } from 'ionic-angular';
-import { AlertController } from 'ionic-angular';
+import { AlertController, Platform } from 'ionic-angular';
 
 import { TicketsService, EventSubscription, Ticket, Event, EventResponse, TicketMessage } from '../../app/tickets.service';
 import { Observable } from 'rxjs/Observable';
 import { SettingsPage } from '../settings/settings';
 import { SubscribePage } from '../subscribe/subscribe';
 import { Subscription } from 'rxjs';
+import { BackgroundMode } from '@ionic-native/background-mode';
 
 
 @Component({
@@ -26,7 +27,8 @@ export class HomePage implements OnInit, OnDestroy {
   unsubscribedItems: Event[] = [];
   ticketSubscriptions: EventSubscription[] = [];
 
-  constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient) {
+  constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient,
+    private backgroundMode: BackgroundMode, public platform: Platform) {
   }
 
   ngOnInit(): void {
@@ -109,6 +111,21 @@ export class HomePage implements OnInit, OnDestroy {
       .filter((item) => {
         return this.ticketSubscriptions.filter(subscr => subscr.ticket.eventid === item.id).length === 0;
       });
+    if (this.platform.is('cordova')) {
+      try {
+        if (this.ticketSubscriptions.length > 0) {
+          this.backgroundMode.setDefaults({
+            title: 'Mobile Ticket Queue',
+            text: 'is listening on ticket-service'
+          });
+          this.backgroundMode.enable();
+        } else {
+          this.backgroundMode.disable();
+        }
+      } catch (e) {
+
+      }
+    }
   }
 
   getEvents(ev: any) {

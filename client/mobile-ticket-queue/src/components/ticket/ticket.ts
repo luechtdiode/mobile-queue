@@ -4,6 +4,11 @@ import { formatCurrentMoment } from '../../app/utils';
 import { Vibration } from '@ionic-native/vibration';
 import { Subscription } from 'rxjs';
 import { Observable } from 'rxjs/Observable';
+import { BackgroundMode } from '@ionic-native/background-mode';
+import { LocalNotifications } from '@ionic-native/local-notifications';
+import { Toast } from '@ionic-native/toast';
+import { SubscribePage } from '../../pages/subscribe/subscribe';
+import { Platform } from 'ionic-angular';
 
 @Component({
   selector: 'ticket',
@@ -47,7 +52,19 @@ export class TicketComponent implements OnInit, OnDestroy {
   private expiredSubscription: Subscription;
   private skippedSubscription: Subscription;
   
-  constructor(private ws: TicketsService, private vibration :Vibration) {
+  constructor(private ws: TicketsService, private vibration :Vibration, public platform: Platform,
+    private backgroundMode: BackgroundMode, private localNotifications: LocalNotifications, private toast: Toast) {
+      
+  }
+
+  private showTostMessage() {
+    if (this.platform.is('cordova')) {
+      try {
+        this.toast.showLongBottom(this.lastMessage).subscribe();
+      } catch (e) {
+  
+      }
+    }
   }
 
   ngOnInit(): void {
@@ -55,40 +72,62 @@ export class TicketComponent implements OnInit, OnDestroy {
     this.lastMessageTitle = `${formatCurrentMoment()} - Ticket registered`;
     this.lastMessage = `You'll be called 10 minutes before Your Event "${this.eventTitle}" starts!`;
     this.cancelled = false;
-    const filterMyTicketChannel = (msg: TicketMessage) => msg && msg.ticket.id === this.subscribedEvent.ticket.id;
+    const filterMyTicketChannel = (msg: TicketMessage) => msg && msg.ticket.id === this.subscribedEvent.ticket.id && msg.ticket.eventid == this.subscribedEvent.ticket.eventid;
     const filterMyTicketSummaryChannel = (summary: UserTicketSummary) => summary && summary.eventid === this.subscribedEvent.ticket.eventid;
 
     this.activatedSubsription = this.ws.ticketActivated.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket (re-)activated`;
       this.lastMessage = `You will be called 10 minutes before Your Event "${this.eventTitle}" starts!`;
+      this.showTostMessage();
     });
-    this.calledSubsription = this.ws.ticketCalled.filter((msg: TicketMessage) => msg && msg.ticket.id === this.subscribedEvent.ticket.id).subscribe(msg =>{
+    this.calledSubsription = this.ws.ticketCalled.filter(filterMyTicketChannel).subscribe(msg =>{
       this.subscribedEvent.ticket = msg.ticket;
       this.vibration.vibrate([1000 , 500 , 2000]);
       this.lastMessageTitle = `${formatCurrentMoment()} - Let's go`;
       this.lastMessage = "Please confirm. Will you be ready in 10 minutes?";
+      if (this.platform.is('cordova')) {
+        try {
+          this.localNotifications.schedule({
+            id: msg.ticket.eventid,
+            text: this.lastMessage
+          });
+          this.backgroundMode.isScreenOff().then((off: boolean) => {
+            try {
+              if (off) {
+                this.backgroundMode.unlock();
+              } else {
+                this.backgroundMode.moveToForeground();
+              }
+            } catch (e) {}
+          });
+        } catch (e) {}
+      }
     });
     this.acceptedSubsription = this.ws.ticketAccepted.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket accepted`;
       this.lastMessage = `We expect you in 10 minutes at ${this.eventTitle}!`;
+      this.showTostMessage();
     });
     this.skippedSubscription = this.ws.ticketSkipped.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket skipped`;
       this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+      this.showTostMessage();
     });
     this.expiredSubscription = this.ws.ticketExpired.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket has expired`;
       this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+      this.showTostMessage();
     });
     this.closedSubscription = this.ws.ticketDeleted.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.cancelled = true;
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket returned`;
-      this.lastMessage = `You're no longer waiting for ${this.eventTitle}!`;  
+      this.lastMessage = `You're no longer waiting for ${this.eventTitle}!`; 
+      this.showTostMessage();
     });
     this.summariesSubsription = this.ws.ticketSummaries.filter(filterMyTicketSummaryChannel).subscribe((summary: UserTicketSummary) => {
       this.ticketSummary = summary;
@@ -126,17 +165,19 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log("destroy ticket " + JSON.stringify(this.subscribedEvent))
+    console.log("destroy ticket " + this.subscribedEvent)
     this.clearSubsriptions();
   }
 
   clearSubsriptions() {
-    this.summariesSubsription.unsubscribe();
-    this.acceptedSubsription.unsubscribe();
-    this.calledSubsription.unsubscribe();
-    this.activatedSubsription.unsubscribe();
-    this.closedSubscription.unsubscribe();
-    this.expiredSubscription.unsubscribe();
-    this.skippedSubscription.unsubscribe();
+    if (this.summariesSubsription) {
+      this.summariesSubsription.unsubscribe();
+      this.acceptedSubsription.unsubscribe();
+      this.calledSubsription.unsubscribe();
+      this.activatedSubsription.unsubscribe();
+      this.closedSubscription.unsubscribe();
+      this.expiredSubscription.unsubscribe();
+      this.skippedSubscription.unsubscribe();
     }
+  }
 }

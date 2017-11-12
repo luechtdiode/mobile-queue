@@ -3,6 +3,9 @@ import { ErrorHandler, NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
+import { BackgroundMode } from '@ionic-native/background-mode';
+import { LocalNotifications } from '@ionic-native/local-notifications';
+import { Toast } from '@ionic-native/toast';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
@@ -41,6 +44,9 @@ import { SubscribePage } from '../pages/subscribe/subscribe';
     SplashScreen,
     TicketsService,
     Vibration,
+    BackgroundMode,
+    LocalNotifications,
+    Toast,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })
