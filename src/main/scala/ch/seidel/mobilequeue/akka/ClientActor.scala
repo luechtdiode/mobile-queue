@@ -16,9 +16,9 @@ import spray.json._
 
 import ch.seidel.mobilequeue.akka.EventRegistryActor.CreateEventTicket
 import ch.seidel.mobilequeue.akka.EventRegistryActor.CloseEventTicket
-import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketActionPerformed }
-import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed }
-import ch.seidel.mobilequeue.akka.UserRegistryActor.Authenticate
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.{ ActionPerformed => TicketActionPerformed, JoinTicket }
+import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserActionPerformed, Authenticate }
+import ch.seidel.mobilequeue.akka.UserRegistryActor.{ PropagateTicketIssued, PropagateTicketCalled, PropagateTicketSkipped, PropagateTicketClosed, PropagateTicketConfirmed }
 import ch.seidel.mobilequeue.http.JsonSupport
 import ch.seidel.mobilequeue.model._
 
@@ -65,11 +65,27 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     case tc: TicketConfirmed =>
       handleTicketConfirmed(tc)
       removeObservedTicket(user, tickets, tc.ticket.eventid)
+      userRegistryActor ! PropagateTicketConfirmed(tc, sender)
 
-    case ts: TicketSkipped => handleTicketSkipped(ts)
+    case PropagateTicketConfirmed(tc: TicketConfirmed, ticketActor: ActorRef) =>
+      handleTicketConfirmed(tc)
+      removeObservedTicket(user, tickets, tc.ticket.eventid)
+
+    case ts: TicketSkipped =>
+      handleTicketSkipped(ts)
+      userRegistryActor ! PropagateTicketSkipped(ts, sender)
+
+    case PropagateTicketSkipped(ts: TicketSkipped, ticketActor: ActorRef) =>
+      handleTicketSkipped(ts)
 
     // system events
-    case tc: TicketCalled => handleTicketCalled(tc)
+    case tc: TicketCalled =>
+      handleTicketCalled(tc, sender)
+      userRegistryActor ! PropagateTicketCalled(tc, sender)
+
+    case PropagateTicketCalled(tc: TicketCalled, ticketActor: ActorRef) =>
+      handleTicketCalled(tc, ticketActor)
+
     case ta: TicketActionPerformed => // println(ta)
     case KeepAlive => handleKeepAlive
 
@@ -87,24 +103,32 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       eventRegistryActor ! CreateEventTicket(Ticket(0L, user.id, channel, Requested, cnt), self)
 
     // system events
-    case ta: TicketIssued =>
-      val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
-      wsSend.foreach(_ ! tm)
-      become(subscribed(user, ticket + ta.ticket))
+    case ti: TicketIssued =>
+      handleTicketIssued(ti, user, ticket)
+      userRegistryActor ! PropagateTicketIssued(ti, sender)
+
+    case PropagateTicketIssued(ti: TicketIssued, ticketActor: ActorRef) =>
+      eventRegistryActor ! JoinTicket(ti.ticket, self)
+      handleTicketIssued(ti, user, ticket)
 
     case tra: TicketReactivated =>
       val tm = TextMessage(tra.toJson.toJsonStringWithType(tra))
       tra.ticket.state match {
         case Called =>
           wsSend.foreach(_ ! tm)
-          handleTicketCalled(TicketCalled(tra.ticket))
+          handleTicketCalled(TicketCalled(tra.ticket), sender)
         case _ =>
           wsSend.foreach(_ ! tm)
       }
       become(subscribed(user, ticket + tra.ticket))
 
-    case td: TicketClosed =>
-      val tm = TextMessage(td.toJson.toJsonStringWithType(td))
+    case tc: TicketClosed =>
+      val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
+      wsSend.foreach(_ ! tm)
+      userRegistryActor ! PropagateTicketClosed(tc, sender)
+
+    case PropagateTicketClosed(tc: TicketClosed, ticketActor: ActorRef) =>
+      val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
       wsSend.foreach(_ ! tm)
 
     // system actions
@@ -196,8 +220,15 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     }
   }
 
-  private def handleTicketCalled(tc: TicketCalled) {
-    pendingTicketAcks += (tc -> sender())
+  private def handleTicketIssued(ti: TicketIssued, user: User, ticket: Set[Ticket]) {
+    val tm = TextMessage(ti.toJson.toJsonStringWithType(ti))
+    wsSend.foreach(_ ! tm)
+    println("ticket issued delivered from " + self)
+    become(subscribed(user, ticket + ti.ticket))
+  }
+
+  private def handleTicketCalled(tc: TicketCalled, ticketActor: ActorRef) {
+    pendingTicketAcks += (tc -> ticketActor)
     val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
     wsSend.foreach(_ ! tm)
   }
@@ -238,6 +269,9 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
           acc + entry;
         }
       }
+    val ta = TicketSkipped(tsk.ticket.copy(state = Skipped))
+    val tm = TextMessage(ta.toJson.toJsonStringWithType(ta))
+    wsSend.foreach(_ ! tm)
   }
 }
 

@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { NavController } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 
-import { TicketsService, EventSubscription, Ticket, Event, EventResponse } from '../../app/tickets.service';
+import { TicketsService, EventSubscription, Ticket, Event, EventResponse, TicketMessage } from '../../app/tickets.service';
 import { Observable } from 'rxjs/Observable';
 import { SettingsPage } from '../settings/settings';
 import { SubscribePage } from '../subscribe/subscribe';
@@ -73,23 +73,25 @@ export class HomePage implements OnInit, OnDestroy {
 
     this.updateUnsubscribedItems();
     console.log('items retrieved');
+
+    const addTicket = (msg: TicketMessage) => {
+      this.removeTicket(msg.ticket);
+      this.ticketSubscriptions.push(<EventSubscription>{
+        description: this.getEventText(msg.ticket.eventid),
+        ticket: msg.ticket
+      });
+      this.updateUnsubscribedItems();
+    };
+
     if (!this.createdSubscription) {
       this.createdSubscription = this.ws.ticketCreated.subscribe(msg => {
         console.log('ticket issued');
-        this.ticketSubscriptions.push(<EventSubscription>{
-          description: this.getEventText(msg.ticket.eventid),
-          ticket: msg.ticket
-        });
-        this.updateUnsubscribedItems();
+        addTicket(msg);
       });
 
       this.activatedSubscription = this.ws.ticketActivated.subscribe(msg => {
         console.log('ticket activated');
-        this.ticketSubscriptions.push(<EventSubscription>{
-          description: this.getEventText(msg.ticket.eventid),
-          ticket: msg.ticket
-        });
-        this.updateUnsubscribedItems();
+        addTicket(msg);
       });
       this.ws.init();
     }
@@ -155,8 +157,12 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
+  private removeTicket(ticket: Ticket) {
+    this.ticketSubscriptions = this.ticketSubscriptions.filter(subscr => subscr.ticket.eventid !== ticket.eventid);    
+  }
+
   onTicketClosed(ticket: Ticket) {
-    this.ticketSubscriptions = this.ticketSubscriptions.filter(subscr => subscr.ticket.eventid !== ticket.eventid);
+    this.removeTicket(ticket);
     this.initializeItems();
   }
 }

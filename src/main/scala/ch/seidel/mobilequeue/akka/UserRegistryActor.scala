@@ -10,6 +10,8 @@ import ch.seidel.mobilequeue.model.Ticket
 import ch.seidel.mobilequeue.model.User
 import ch.seidel.mobilequeue.model.Users
 import ch.seidel.mobilequeue.model.UserDefaults
+import akka.actor.Terminated
+import ch.seidel.mobilequeue.model._
 
 object UserRegistryActor {
   sealed trait UserRegistryMessage
@@ -22,6 +24,16 @@ object UserRegistryActor {
   final case class GetUser(id: Long) extends UserRegistryMessage
   final case class DeleteUser(id: Long) extends UserRegistryMessage
 
+  sealed trait PropagateTicketMessage {
+    val msg: MobileTicketQueueEvent
+    val ticketActor: ActorRef
+  }
+  final case class PropagateTicketIssued(msg: TicketIssued, ticketActor: ActorRef) extends PropagateTicketMessage
+  final case class PropagateTicketCalled(msg: TicketCalled, ticketActor: ActorRef) extends PropagateTicketMessage
+  final case class PropagateTicketConfirmed(msg: TicketConfirmed, ticketActor: ActorRef) extends PropagateTicketMessage
+  final case class PropagateTicketSkipped(msg: TicketSkipped, ticketActor: ActorRef) extends PropagateTicketMessage
+  final case class PropagateTicketClosed(msg: TicketClosed, ticketActor: ActorRef) extends PropagateTicketMessage
+
   def props(eventRegistry: ActorRef): Props = Props(classOf[UserRegistryActor], eventRegistry)
 }
 
@@ -29,52 +41,91 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
   import UserRegistryActor._
   import context._
 
-  def isUnique(username: String, deviceId: String)(implicit users: Map[User, Seq[Ticket]]) =
+  def isUnique(username: String, deviceId: String)(implicit users: Map[User, Set[ActorRef]]) =
     users.keys.forall(u => u.name != username && !u.deviceIds.contains(deviceId))
 
-  def createUser(user: User)(implicit users: Map[User, Seq[Ticket]]): User = {
+  def createUser(user: User)(implicit users: Map[User, Set[ActorRef]]): User = {
     val withId = user.copy(id = users.keys.foldLeft(0L)((acc, user) => { math.max(user.id, acc) }) + 1L)
-    become(operateWith(users + (withId -> Seq.empty)))
+    watch(sender)
+    val newUserSet = users + (withId -> Set(sender))
+    //    println("new User-set " + newUserSet)
+    become(operateWith(newUserSet))
     withId
   }
 
-  def operateWith(implicit users: Map[User, Seq[Ticket]] = Map.empty[User, Seq[Ticket]]): Receive = {
+  def forwardToAllClients(userid: Long, message: PropagateTicketMessage)(implicit users: Map[User, Set[ActorRef]]) {
+    users.filter(u => u._1.id == userid).map(u => {
+      //      println("forwarding " + message + " for " + u._1 + " to " + u._2)
+      u
+    }).flatMap(_._2).filter(_ != sender).foreach(_ ! message)
+  }
 
+  def printUserActorRefs(implicit users: Map[User, Set[ActorRef]]) {
+    println("operateWith:" + users.map(u => (u._1, u._2.mkString("\n   * ", "\n   * ", ""))).mkString("\n - ", "\n - ", ""))
+  }
+
+  def operateWith(implicit users: Map[User, Set[ActorRef]]): Receive = {
     case Authenticate(name, pw, deviceId) =>
       if (isUnique(name, deviceId)) {
-        val withId = createUser(User(0, Seq(deviceId), name, pw, "", ""))
-        sender() ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.id} authenticated.")
+        val withId = createUser(User(0, Set(deviceId), name, pw, "", ""))
+        sender ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.id} authenticated.")
         eventRegistry.forward(ClientConnected(withId, deviceId, sender))
-        println("user created " + withId)
+        println("user created " + withId + " with clientActor " + sender)
       } else {
-        users.keys.filter(u => u.name == name && (u.password == pw || u.deviceIds.contains(deviceId))) match {
-          case u if (u.nonEmpty) =>
-            val ud = if (u.head.deviceIds.contains(deviceId)) u.head else {
-              val udr = u.head.copy(deviceIds = u.head.deviceIds :+ deviceId)
-              become(operateWith(users - u.head + (udr -> users(u.head))))
-              udr.copy(deviceIds = Seq(deviceId)).withHiddenPassword
-            }
-            sender() ! ActionPerformed(ud, s"User ${u.head.id} authenticated.")
+        users.keys.filter(u => u.name == name && (u.password == pw || u.deviceIds.contains(deviceId))).headOption match {
+          case Some(user) =>
+            watch(sender)
+            val udr = user.copy(deviceIds = user.deviceIds + deviceId)
+            val newUserSet = users - user + (udr -> (users(user) + sender))
+            //            println("new User-set " + newUserSet)
+            become(operateWith(newUserSet))
+
+            // qualify the acting deviceId to propagate ClientConnected in the system
+            val ud = udr.copy(deviceIds = Set(deviceId)).withHiddenPassword
+            sender ! ActionPerformed(ud, s"User ${ud.id} authenticated.")
             eventRegistry.forward(ClientConnected(ud, deviceId, sender))
-            println("user authenticated " + ud)
+            println("user authenticated " + ud + " with clientActor " + sender)
           case _ =>
-            sender() ! ActionPerformed(UserDefaults.empty(name), s"User ${name} exists already.")
+            sender ! ActionPerformed(UserDefaults.empty(name), s"User ${name} exists already.")
         }
       }
 
+    case Terminated(clientActor) =>
+      println("UserRegistry: unwatching " + clientActor)
+      unwatch(clientActor)
+      users
+        .filter(userToActor => userToActor._2.contains(clientActor))
+        .foreach { userToActor =>
+          val (user, clientActorList) = userToActor
+          //          println(s"disconnecting client-actor of ${clientActorList.size} from user ${user.withHiddenPassword}.")
+          val newClientActorList = clientActorList - clientActor
+          //          println(s"remaining registered clients on User ${user}: ${newClientActorList.size}")
+          val newUserList = users - user + (user -> newClientActorList)
+          //          println("new Userlist: " + newUserList)
+          become(operateWith(newUserList))
+        }
+
+    // forwarding to all clients of a user      
+    case ti: PropagateTicketIssued => forwardToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketCalled => forwardToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketConfirmed => forwardToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketSkipped => forwardToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketClosed => forwardToAllClients(ti.msg.ticket.userid, ti)
+
+    // Rest-API
     case GetUsers =>
-      sender() ! Users(users.keys.toSeq.map(_.withHiddenPassword.withHiddenDeviceIds))
+      sender ! Users(users.keys.toSeq.map(_.withHiddenPassword.withHiddenDeviceIds))
 
     case CreateUser(user) =>
       if (isUnique(user.name, user.deviceIds.headOption.getOrElse(UUID.randomUUID().toString()))) {
         val withId = createUser(user)
-        sender() ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.name} with id ${withId.id} created.")
+        sender ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.name} with id ${withId.id} created.")
       } else {
-        sender() ! ActionPerformed(UserDefaults.empty(user.name), s"User ${user.name} exists already.")
+        sender ! ActionPerformed(UserDefaults.empty(user.name), s"User ${user.name} exists already.")
       }
 
     case GetUser(id) =>
-      sender() ! users.keys.find(_.id == id).getOrElse(UserDefaults.empty(id)).withHiddenPassword.withHiddenDeviceIds
+      sender ! users.keys.find(_.id == id).getOrElse(UserDefaults.empty(id)).withHiddenPassword.withHiddenDeviceIds
 
     case DeleteUser(id) =>
       val toDelete = users.keys.find(_.id == id).getOrElse(UserDefaults.empty(id))
@@ -83,8 +134,8 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
           become(operateWith(users - toDelete))
         case _ =>
       }
-      sender() ! ActionPerformed(toDelete.withHiddenPassword.withHiddenDeviceIds, s"User ${id} deleted.")
+      sender ! ActionPerformed(toDelete.withHiddenPassword.withHiddenDeviceIds, s"User ${id} deleted.")
   }
 
-  def receive = operateWith()
+  def receive = operateWith(Map.empty[User, Set[ActorRef]])
 }

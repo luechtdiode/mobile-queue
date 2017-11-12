@@ -16,6 +16,7 @@ object TicketRegistryActor {
   final case class GetNextTickets(next: Int) extends TicketRegistryMessage
   final case object GetAccepted extends TicketRegistryMessage
   final case class CreateTicket(ticket: Ticket, client: ActorRef) extends TicketRegistryMessage
+  final case class JoinTicket(ticket: Ticket, client: ActorRef) extends TicketRegistryMessage
   final case class GetTicket(id: Long) extends TicketRegistryMessage
   final case class CloseTicket(id: Long) extends TicketRegistryMessage
 
@@ -80,7 +81,12 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
     ts
   }
 
+  def dumpTickets(tickets: Map[Long, TicketClientHolder]) {
+    println(tickets.values.mkString("\n"))
+  }
+
   def workWith(tickets: Map[Long, TicketClientHolder]): EventTicketsSummary = {
+    //    dumpTickets(tickets)
     become(operateWith(tickets))
     sendTicketsSummaries(tickets)
   }
@@ -90,8 +96,8 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       sender() ! Tickets(tickets.values.map(_.ticket).toSeq)
 
     case GetNextTickets(cnt) =>
-      println("calling GetNextTickets from " + sender())
-      requiredGroupSize = cnt
+      println("calling GetNextTickets")
+      requiredGroupSize = if (cnt > 0) cnt else event.groupsize
       val selected = selectNextTickets(tickets)
       val newTicketCollection = callInvitations(selected, tickets)
       sender ! workWith(newTicketCollection)
@@ -114,16 +120,25 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       val issuedTicket = TicketIssued(ticketWithId)
       clientActor ! issuedTicket
       context.watch(clientActor)
-      parent ! TicketCreated(issuedTicket, clientActor)
       workWith(tickets + (ticketWithId.id -> TicketClientHolder(ticketWithId, Set(clientActor))))
 
-    case TicketCreated(issuedTicket, requestingClient) =>
-      tickets
-        .filter(pair => pair._2.ticket.userid == issuedTicket.ticket.userid)
-        .map(_._2.clients)
-        .foreach { clientActors =>
-          clientActors.filter(_ != requestingClient).foreach(_ ! issuedTicket)
-        }
+    case tj: JoinTicket =>
+      val selectedTickets = tickets
+        .map(_._2)
+        .filter(ticketholder => ticketholder.ticket.userid == tj.ticket.userid)
+        .filter(ticketholder => ticketholder.ticket.state match {
+          case Closed => false
+          case Confirmed => false
+          case _ => true
+        })
+      if (selectedTickets.nonEmpty) context.watch(tj.client)
+      val newTickets = selectedTickets.foldLeft(tickets) { (acc, ticketholder) =>
+        println(s"joining client-actor to ticket ${ticketholder.ticket}")
+        val newClientActorList = ticketholder.clients + tj.client
+        println(s"actually registered clients: ${newClientActorList.size}")
+        acc - ticketholder.ticket.id + (ticketholder.ticket.id -> TicketClientHolder(ticketholder.ticket, newClientActorList))
+      }
+      workWith(newTickets)
 
     case GetTicket(id) => tickets.get(id).foreach(sender() ! _)
 
@@ -132,7 +147,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         case Some(ticketholder) if (ticketholder.ticket.id > 0) =>
           val closedTicketHolder = ticketholder.toNewState(Closed)
           val td = TicketClosed(closedTicketHolder.ticket)
-          parent ! td
+          //          parent ! td
           tickets
             .map(_._2)
             .filter(th => th.ticket.userid == closedTicketHolder.ticket.userid)
@@ -142,17 +157,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
             }
           workWith(mapWithNewState(Map(id -> tickets(id)), Closed, tickets))
         case _ =>
-          parent ! TicketClosed(Ticket(id, 0, 0))
       }
-
-    case td: TicketClosed =>
-      tickets
-        .map(_._2)
-        .filter(ticketholder => ticketholder.ticket.userid == td.ticket.userid)
-        .filter(ticketholder => ticketholder.clients.nonEmpty)
-        .foreach { ticketholder =>
-          ticketholder.clients.foreach(_ ! td)
-        }
 
     case connected @ ClientConnected(user, _, clientActor) =>
       val selectedTickets = tickets
@@ -167,13 +172,14 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       val newTickets = selectedTickets.foldLeft(tickets) { (acc, ticketholder) =>
         println(s"connecting client-actor to ticket ${ticketholder.ticket}")
         val newClientActorList = ticketholder.clients + clientActor
+        println(s"actually registered clients: ${newClientActorList.size}")
         sender() ! TicketReactivated(ticketholder.ticket)
         acc - ticketholder.ticket.id + (ticketholder.ticket.id -> TicketClientHolder(ticketholder.ticket, newClientActorList))
       }
       workWith(newTickets)
 
     case Terminated(clientActor) =>
-      println("unwatching " + clientActor)
+      println("TicketRegistry unwatching " + clientActor)
       context.unwatch(clientActor)
       tickets
         .filter(pair => pair._2.clients.contains(clientActor))
@@ -181,7 +187,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         .foreach { ticket =>
           println(s"disconnecting client-actor from ticket $ticket.")
           val newClientActorList = tickets(ticket).clients - clientActor
-          println(s"remaining registered clients: ${newClientActorList.size}")
+          println(s"remaining registered clients on Ticket ${ticket}: ${newClientActorList.size}")
           workWith(tickets - ticket + (ticket -> TicketClientHolder(tickets(ticket).ticket, newClientActorList)))
         }
   }
@@ -245,6 +251,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
           calledTicket.clients.foreach { _ ! TicketCalled(calledTicket.ticket) }
           (id, calledTicket)
         case None => ticketholder.ticket.state match {
+          case Skipped if (close) => (id, ticketholder.toNewState(Issued)) // reset Skipped to Issued
           case Confirmed if (close) => (id, ticketholder.toNewState(Closed)) // close confirmed ticket
           case _ => (id, ticketholder)
         }

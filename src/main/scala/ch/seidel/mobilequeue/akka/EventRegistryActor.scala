@@ -14,6 +14,7 @@ import ch.seidel.mobilequeue.akka.TicketRegistryActor.TicketCreated
 
 import ch.seidel.mobilequeue.akka.UserRegistryActor.ClientConnected
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetAccepted
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.JoinTicket
 
 object EventRegistryActor {
   sealed trait EventRegistryMessage
@@ -81,10 +82,15 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
         })
 
     // broadcast to all other connected clients of the same user
-    case tc: TicketCreated =>
-      ticketsForEventActors.values
-        .filter(_ != sender)
-        .foreach(_.forward(tc))
+    case tj: JoinTicket =>
+      ticketsForEventActors
+        .filter(ta => ta._1.id == tj.ticket.eventid)
+        .map(_._2)
+        .foreach(_.forward(tj))
+    //    case tc: TicketCreated =>
+    //      ticketsForEventActors.values
+    //        .filter(_ != sender)
+    //        .foreach(_.forward(tc))
 
     case GetEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTicket(id))))
@@ -92,10 +98,10 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
     case CloseEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(CloseTicket(id))))
 
-    case td: TicketClosed =>
-      ticketsForEventActors.values
-        .filter(_ != sender)
-        .foreach(_.forward(td))
+    //    case td: TicketClosed =>
+    //      ticketsForEventActors.values
+    //        .filter(_ != sender)
+    //        .foreach(_.forward(td))
 
     // supervision of connected clients
     case connected: ClientConnected =>

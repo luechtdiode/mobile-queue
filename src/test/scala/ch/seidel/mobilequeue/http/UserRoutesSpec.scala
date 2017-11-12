@@ -57,7 +57,7 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
     //#testing-post
     "be able to add users (POST /users)" in {
-      val user = User(0, Seq("1"), "Testuser", "password", "test@test.ch", "00411234556")
+      val user = User(0, Set("1"), "Testuser", "password", "test@test.ch", "00411234556")
       val userEntity = Marshal(user).to[MessageEntity].futureValue // futureValue is from ScalaFutures
 
       // using the RequestBuilding DSL:

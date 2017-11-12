@@ -43,11 +43,15 @@ export class TicketComponent implements OnInit, OnDestroy {
   private acceptedSubsription: Subscription;
   private calledSubsription: Subscription;
   private activatedSubsription: Subscription;
-
+  private closedSubscription: Subscription;
+  private expiredSubscription: Subscription;
+  private skippedSubscription: Subscription;
+  
   constructor(private ws: TicketsService, private vibration :Vibration) {
   }
 
   ngOnInit(): void {
+    console.log("create ticket " + JSON.stringify(this.subscribedEvent))
     this.lastMessageTitle = `${formatCurrentMoment()} - Ticket registered`;
     this.lastMessage = `You'll be called 10 minutes before Your Event "${this.eventTitle}" starts!`;
     this.cancelled = false;
@@ -70,6 +74,22 @@ export class TicketComponent implements OnInit, OnDestroy {
       this.lastMessageTitle = `${formatCurrentMoment()} - Ticket accepted`;
       this.lastMessage = `We expect you in 10 minutes at ${this.eventTitle}!`;
     });
+    this.skippedSubscription = this.ws.ticketSkipped.filter(filterMyTicketChannel).subscribe(msg => {
+      this.subscribedEvent.ticket = msg.ticket;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket skipped`;
+      this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+    });
+    this.expiredSubscription = this.ws.ticketExpired.filter(filterMyTicketChannel).subscribe(msg => {
+      this.subscribedEvent.ticket = msg.ticket;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket has expired`;
+      this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+    });
+    this.closedSubscription = this.ws.ticketDeleted.filter(filterMyTicketChannel).subscribe(msg => {
+      this.subscribedEvent.ticket = msg.ticket;
+      this.cancelled = true;
+      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket returned`;
+      this.lastMessage = `You're no longer waiting for ${this.eventTitle}!`;  
+    });
     this.summariesSubsription = this.ws.ticketSummaries.filter(filterMyTicketSummaryChannel).subscribe((summary: UserTicketSummary) => {
       this.ticketSummary = summary;
     });    
@@ -82,10 +102,9 @@ export class TicketComponent implements OnInit, OnDestroy {
   onClose = new EventEmitter<Ticket>();
 
   skip(slidingItem) {
-    this.subscribedEvent.ticket.state = 'Skipped';
-    this.ws.skip(this.subscribedEvent.ticket);
     this.lastMessageTitle = `${formatCurrentMoment()} - I'm Not ready yet`;
     this.lastMessage = "I skipped my invitation to the next iteration";
+    this.ws.skip(this.subscribedEvent.ticket);
     slidingItem.close();
   }
 
@@ -97,10 +116,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   cancel(slidingItem) {
-    this.cancelled = true;
     this.ws.unsubscribeEvent(this.subscribedEvent.ticket.eventid);
-    this.lastMessageTitle = `${formatCurrentMoment()} - Ticket returned`;
-    this.lastMessage = `You're no longer waiting for ${this.eventTitle}!`;  
     slidingItem.close();
   }
 
@@ -110,6 +126,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    console.log("destroy ticket " + JSON.stringify(this.subscribedEvent))
     this.clearSubsriptions();
   }
 
@@ -118,5 +135,8 @@ export class TicketComponent implements OnInit, OnDestroy {
     this.acceptedSubsription.unsubscribe();
     this.calledSubsription.unsubscribe();
     this.activatedSubsription.unsubscribe();
-  }
+    this.closedSubscription.unsubscribe();
+    this.expiredSubscription.unsubscribe();
+    this.skippedSubscription.unsubscribe();
+    }
 }

@@ -14,7 +14,7 @@
       <h2>{{subscribedEvent.description}} {{subscribedEvent.ticket.participants}} person(s)</h2>
    
       <ion-list inline>
-        <span style="font-size: 75%"><ion-icon name="clock"></ion-icon>&nbsp;{{lastMessageTitle.split(' - ')[0]}}</span>
+        <span style="font-size: 75%"><ion-icon name="clock"></ion-icon>&nbsp;{{lastMessageTitle.split(' - ')[0]}}</span> - {{lastMessageTitle.split(' - ')[1]}}
         <p>
           {{lastMessage}}
         </p>
@@ -29,7 +29,7 @@
     </div>
     <div item-end style="vertical-align: top;">
       <ion-badge *ngIf="!called && !accepted" item-end>Issued</ion-badge>
-      <ion-badge *ngIf="called" color="light" item-end>Issued</ion-badge>
+      <ion-badge *ngIf="called" item-end>Called</ion-badge>
       <ion-badge *ngIf="accepted" color="secondary" item-end>
         <h1>Accepted</h1>
       </ion-badge>

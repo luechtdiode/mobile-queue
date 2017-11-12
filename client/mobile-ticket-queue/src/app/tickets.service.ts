@@ -66,6 +66,7 @@ export class TicketsService {
   ticketActivated = new ReplaySubject<TicketMessage>(10);
   ticketCalled = new ReplaySubject<TicketMessage>(10);
   ticketAccepted = new ReplaySubject<TicketMessage>(10);
+  ticketSkipped = new ReplaySubject<TicketMessage>(10);
   ticketExpired = new ReplaySubject<TicketMessage>(10);
   ticketDeleted = new ReplaySubject<TicketMessage>(10);
   ticketSummaries = new ReplaySubject<UserTicketSummary>();
@@ -348,10 +349,13 @@ export class TicketsService {
           case 'TicketAccepted':
             this.ticketAccepted.next(message);
             break;
+          case 'TicketSkipped':
+            this.ticketSkipped.next(message);
+            break;
           case 'TicketExpired':
             this.ticketExpired.next(message);
             break;
-          case 'TicketDeleted':
+          case 'TicketClosed':
             this.ticketDeleted.next(message);
           case 'UserTicketsSummary':
             this.ticketSummaries.next(message);
