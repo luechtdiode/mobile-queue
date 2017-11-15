@@ -10,13 +10,15 @@ import { SettingsPage } from '../settings/settings';
 import { SubscribePage } from '../subscribe/subscribe';
 import { Subscription } from 'rxjs';
 import { BackgroundMode } from '@ionic-native/background-mode';
-
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { combineLatest } from 'rxjs/operator/combineLatest';
 
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
 })
 export class HomePage implements OnInit, OnDestroy {
+  externalLoaderSubscription: Subscription;
   activatedSubscription: Subscription;
   createdSubscription: Subscription;
 
@@ -45,12 +47,29 @@ export class HomePage implements OnInit, OnDestroy {
         this.ticketSubscriptions = [];
       }
     });
+    this.externalLoaderSubscription = Observable.combineLatest(this.ws.identified,  Observable.interval(1000)).subscribe(latest => {
+      const [identified, tick] = latest;
+      const url = localStorage.getItem("external_load");
+      
+      if (this.navCtrl.getActive().component === HomePage && identified && url && url.startsWith('mobileticket://') && this.items.length > 0) {
+        localStorage.removeItem("external_load");
+        this.ws.logMessages.next(url);
+        const [protocol, entity, id, command] = url.split('/').filter(s => s.length > 0);
+        this.ws.logMessages.next('External loadrequest: entity=' + entity + ", id=" + id + ", command=" + command);
+        switch(command) {
+          case 'subscribe':
+          default:
+            this.items.filter(i => i.id === parseInt(id)).forEach(event => this.subscribe(event));
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {
     if (this.activatedSubscription) {
       this.activatedSubscription.unsubscribe();
       this.createdSubscription.unsubscribe();
+      this.externalLoaderSubscription.unsubscribe();
     }
     console.log('home destroyed');
   }

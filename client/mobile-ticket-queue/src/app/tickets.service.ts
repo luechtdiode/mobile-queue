@@ -154,6 +154,9 @@ export class TicketsService {
     this.explicitClosed = explicit;
     if (this.websocket) {
       this.websocket.close();
+      if (explicit) {
+        this.close();  
+      }
     } else {
       this.close();
     }
@@ -245,6 +248,9 @@ export class TicketsService {
       if (message) {
         this.sendMessage(message);
       }
+      // for(let idx = 0; idx < localStorage.length; idx++) {
+      //   this.logMessages.next('LocalStore Item ' + localStorage.key(idx) + " = " + localStorage.getItem(localStorage.key(idx)));
+      // }
     };
 
     this.websocket.onclose = (evt: CloseEvent) => {

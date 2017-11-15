@@ -30,3 +30,8 @@ $ ionic cordova plugin add cordova-plugin-qrscanner
 $ npm install --save @ionic-native/qr-scanner
 
 https://github.com/mapsplugin/cordova-plugin-googlemaps
+
+Icons
+https://100soft.us/projects/#/doctor-strange-gifs-1/
+
+cordova plugin add https://github.com/EddyVerbruggen/LaunchMyApp-PhoneGap-Plugin.git --variable URL_SCHEME=mobileticket

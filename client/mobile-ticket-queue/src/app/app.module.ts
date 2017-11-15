@@ -14,10 +14,10 @@ import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { Vibration } from '@ionic-native/vibration';
 import { TicketsService } from './tickets.service';
-import 'rxjs/Rx';
 import { SettingsPage } from '../pages/settings/settings';
 import { TicketComponent } from '../components/ticket/ticket';
 import { SubscribePage } from '../pages/subscribe/subscribe';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 @NgModule({
   declarations: [
