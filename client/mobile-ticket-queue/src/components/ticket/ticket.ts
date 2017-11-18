@@ -9,6 +9,7 @@ import { LocalNotifications } from '@ionic-native/local-notifications';
 import { Toast } from '@ionic-native/toast';
 import { SubscribePage } from '../../pages/subscribe/subscribe';
 import { Platform } from 'ionic-angular';
+import { TranslateService } from 'ng2-translate';
 
 @Component({
   selector: 'ticket',
@@ -20,7 +21,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   lastMessageTitle: string;
   lastMessage: string;
   cancelled: boolean;
-
+  
   get called(): boolean {
     return this.subscribedEvent.ticket.state === 'Called';
   }
@@ -51,9 +52,10 @@ export class TicketComponent implements OnInit, OnDestroy {
   private closedSubscription: Subscription;
   private expiredSubscription: Subscription;
   private skippedSubscription: Subscription;
-  
+
   constructor(private ws: TicketsService, private vibration :Vibration, public platform: Platform,
-    private backgroundMode: BackgroundMode, private localNotifications: LocalNotifications, private toast: Toast) {
+    private backgroundMode: BackgroundMode, private localNotifications: LocalNotifications, private toast: Toast,
+    private translate: TranslateService) {
       
   }
 
@@ -68,24 +70,23 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log("create ticket " + JSON.stringify(this.subscribedEvent))
-    this.lastMessageTitle = `${formatCurrentMoment()} - Ticket registered`;
-    this.lastMessage = `You'll be called 10 minutes before Your Event "${this.eventTitle}" starts!`;
+    this.lastMessageTitle = this.translate.instant('messages.TicketRegistered', {"moment": formatCurrentMoment()});
+    this.lastMessage = this.translate.instant("messages.You'll be called", {"eventTitle": this.eventTitle});
     this.cancelled = false;
     const filterMyTicketChannel = (msg: TicketMessage) => msg && msg.ticket.id === this.subscribedEvent.ticket.id && msg.ticket.eventid == this.subscribedEvent.ticket.eventid;
     const filterMyTicketSummaryChannel = (summary: UserTicketSummary) => summary && summary.eventid === this.subscribedEvent.ticket.eventid;
 
     this.activatedSubsription = this.ws.ticketActivated.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
-      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket (re-)activated`;
-      this.lastMessage = `You will be called 10 minutes before Your Event "${this.eventTitle}" starts!`;
+      this.lastMessageTitle = this.translate.instant('messages.TicketReactivated', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant("messages.You'll be called", {"eventTitle": this.eventTitle});
       this.showTostMessage();
     });
     this.calledSubsription = this.ws.ticketCalled.filter(filterMyTicketChannel).subscribe(msg =>{
       this.subscribedEvent.ticket = msg.ticket;
-      this.vibration.vibrate([1000 , 500 , 2000]);
-      this.lastMessageTitle = `${formatCurrentMoment()} - Let's go`;
-      this.lastMessage = "Please confirm. Will you be ready in 10 minutes?";
+      this.vibration.vibrate([1000 , 1000 , 500, 500, 1000]);
+      this.lastMessageTitle = this.translate.instant('messages.LetsGo', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant("Please confirm");
       if (this.platform.is('cordova')) {
         try {
           this.localNotifications.schedule({
@@ -106,27 +107,27 @@ export class TicketComponent implements OnInit, OnDestroy {
     });
     this.acceptedSubsription = this.ws.ticketAccepted.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
-      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket accepted`;
-      this.lastMessage = `We expect you in 10 minutes at ${this.eventTitle}!`;
+      this.lastMessageTitle = this.translate.instant('messages.TicketAccepted', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant('messages.We expect you', {"eventTitle": this.eventTitle});
       this.showTostMessage();
     });
     this.skippedSubscription = this.ws.ticketSkipped.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
-      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket skipped`;
-      this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+      this.lastMessageTitle = this.translate.instant('messages.TicketSkipped', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant('messages.You will be called next Iteration', {"eventTitle": this.eventTitle});
       this.showTostMessage();
     });
     this.expiredSubscription = this.ws.ticketExpired.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
-      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket has expired`;
-      this.lastMessage = `You will be called 10 minutes before the next iteration of Your Event "${this.eventTitle}" starts!`;
+      this.lastMessageTitle = this.translate.instant('messages.TicketExpired', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant('messages.You will be called next Iteration', {"eventTitle": this.eventTitle});
       this.showTostMessage();
     });
     this.closedSubscription = this.ws.ticketDeleted.filter(filterMyTicketChannel).subscribe(msg => {
       this.subscribedEvent.ticket = msg.ticket;
       this.cancelled = true;
-      this.lastMessageTitle = `${formatCurrentMoment()} - Ticket returned`;
-      this.lastMessage = `You're no longer waiting for ${this.eventTitle}!`; 
+      this.lastMessageTitle = this.translate.instant('messages.TicketReturned', {"moment": formatCurrentMoment()});
+      this.lastMessage = this.translate.instant("messages.You're no longer waiting", {"eventTitle": this.eventTitle});
       this.showTostMessage();
     });
     this.summariesSubsription = this.ws.ticketSummaries.filter(filterMyTicketSummaryChannel).subscribe((summary: UserTicketSummary) => {
@@ -137,19 +138,22 @@ export class TicketComponent implements OnInit, OnDestroy {
   @Input()
   subscribedEvent: EventSubscription;
 
+  @Input()
+  showActions: false;
+
   @Output()
   onClose = new EventEmitter<Ticket>();
 
   skip(slidingItem) {
-    this.lastMessageTitle = `${formatCurrentMoment()} - I'm Not ready yet`;
-    this.lastMessage = "I skipped my invitation to the next iteration";
+    this.lastMessageTitle = this.translate.instant('messages.NotReadyYet', {"moment": formatCurrentMoment()});
+    this.lastMessage = this.translate.instant('messages.I Skipped');
     this.ws.skip(this.subscribedEvent.ticket);
     slidingItem.close();
   }
 
   accept(slidingItem) {
-    this.lastMessageTitle = `${formatCurrentMoment()} - Confirmed`;
-    this.lastMessage = "Yes, i'll be there";
+    this.lastMessageTitle = this.translate.instant('messages.Confirmed', {"moment": formatCurrentMoment()});
+    this.lastMessage = this.translate.instant("messages.Yes, i'll be there");
     this.ws.confirm(this.subscribedEvent.ticket);
     slidingItem.close();
   }
@@ -164,8 +168,11 @@ export class TicketComponent implements OnInit, OnDestroy {
     slidingItem.close(); 
   }
 
+  toggleActions() {
+    this.showActions != this.showActions;
+  }
+
   ngOnDestroy(): void {
-    console.log("destroy ticket " + this.subscribedEvent)
     this.clearSubsriptions();
   }
 

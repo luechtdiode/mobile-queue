@@ -12,12 +12,8 @@ import { Subscription } from 'rxjs';
 import { BackgroundMode } from '@ionic-native/background-mode';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { combineLatest } from 'rxjs/operator/combineLatest';
-
-const host = location.host;
-const path = location.pathname;
-const protocol = location.protocol;
-const backendUrl = protocol + "//" + host + path + "api/events";
-const onDeviceUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/events";
+import { TranslateService } from 'ng2-translate';
+import { onDeviceUrl, backendUrl } from '../../app/utils';
 
 @Component({
   selector: 'page-home',
@@ -27,7 +23,7 @@ export class HomePage implements OnInit, OnDestroy {
   externalLoaderSubscription: Subscription;
   activatedSubscription: Subscription;
   createdSubscription: Subscription;
-
+  showActions: false;
   searchQuery: string = '';
   connected = false;
   items: Event[] = [];
@@ -36,7 +32,8 @@ export class HomePage implements OnInit, OnDestroy {
   ticketSubscriptions: EventSubscription[] = [];
 
   constructor(public navCtrl: NavController, public alertCtrl: AlertController, public ws: TicketsService, public http: HttpClient,
-    private backgroundMode: BackgroundMode, public platform: Platform) {
+    private backgroundMode: BackgroundMode, public platform: Platform,
+    private translate: TranslateService) {
   }
 
   ngOnInit(): void {
@@ -136,7 +133,7 @@ export class HomePage implements OnInit, OnDestroy {
         if (this.ticketSubscriptions.length > 0) {
           this.backgroundMode.setDefaults({
             title: 'Mobile Ticket Queue',
-            text: 'is listening on ticket-service'
+            text: this.translate.instant('messages.is listening on ticket-service')
           });
           this.backgroundMode.enable();
         } else {
@@ -174,7 +171,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   loggedInText(): Observable<any> {
-    return this.ws.identified.map(c => c ? `User ${this.ws.getUsername()} Connected` : `User ${this.ws.getUsername()} Disconnected`);
+    return this.ws.identified.map(c => c ? this.translate.instant("messages.UserConnected", {"username": this.ws.getUsername()}) : this.translate.instant("messages.UserDisconnected", {"username": this.ws.getUsername()}));
   }
 
   settings() {
@@ -186,8 +183,8 @@ export class HomePage implements OnInit, OnDestroy {
       this.navCtrl.push(SubscribePage, { event: event });      
     } else {
       let alert = this.alertCtrl.create({
-        title: 'Disconnected',
-        subTitle: 'Please apply all your Settings to connect with the service',
+        title: this.translate.instant("texts.Disconnected"),
+        subTitle: this.translate.instant("messages.ApplySettings"),
         buttons: ['OK']
       });
       alert.present();

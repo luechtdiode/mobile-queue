@@ -215,11 +215,14 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       val pendingStage = nextPendingStage(pendingTicket._1.ticket)
       if (pendingStage > 2) {
         pendingTicketAcks -= pendingTicket._1
-        val te = TicketExpired(pendingTicket._1.ticket)
+        val te = TicketExpired(pendingTicket._1.ticket.copy(state = Issued))
         val tm = TextMessage(te.toJson.toJsonStringWithType(te))
         wsSend.foreach(_ ! tm)
         acc
       } else {
+        val tc = TicketCalled(pendingTicket._1.ticket)
+        val tm = TextMessage(tc.toJson.toJsonStringWithType(tc))
+        wsSend.foreach(_ ! tm)
         acc + (pendingTicket._1.ticket -> pendingStage)
       }
     }

@@ -7,7 +7,7 @@
 <ion-header>
 
   <ion-navbar>
-    <ion-title>My Events</ion-title>
+    <ion-title>{{'texts.MyEvents' | translate}}</ion-title>
   </ion-navbar>
 
 </ion-header>
@@ -15,31 +15,16 @@
 
 <ion-content>
   <ion-list>
-    <ion-item-sliding #slidingItem text-wrap *ngFor="let item of myevents">
-      <ion-item detail-push>
-        <ion-avatar item-start class="icon-block">
-          <img src="assets/imgs/ticket-icon.png">
-        </ion-avatar>
-        <ion-list inline>
-          <ion-item><h1>{{item.event.eventTitle}}</h1> at {{item.event.date}}</ion-item>
-          <ion-item>How many to invite for the next round?<ion-badge item-end>{{item.event.groupsize}}</ion-badge></ion-item>
-          <ion-item><ion-range #count [(ngModel)]="item.event.groupsize" min="1" max="10" step="1" snaps="true" color="secondary"></ion-range></ion-item>
-          <ion-item *ngFor="let invite of item.invites">
-            {{invite.participants}} for {{getUserName(invite.userid)}}
-            <ion-badge *ngIf="invite.state === 'Issued'" item-end>{{invite.state}}</ion-badge>
-            <ion-badge *ngIf="invite.state === 'Called'" item-end>{{invite.state}}</ion-badge>
-            <ion-badge *ngIf="invite.state === 'Skipped'" item-end>{{invite.state}}</ion-badge>
-            <ion-badge *ngIf="invite.state === 'Accepted'" color="secondary" item-end>{{invite.state}}</ion-badge>
-            <ion-badge *ngIf="invite.state === 'Confirmed'" color="secondary" item-end><h1>{{invite.state}}</h1></ion-badge>
-          </ion-item>
-        </ion-list>
-      </ion-item>
-      <ion-item-options side="left">
-        <button class="ion-minus-circled" ion-button color="secondary" (click)="invite(item)">Invite</button>
-        <button class="ion-minus-circled" ion-button color="default" >Open</button>
-        <button class="ion-minus-circled" ion-button color="dark" >Close</button>
-        <button class="ion-minus-circled" ion-button color="danger" >Delete</button>
-      </ion-item-options>
-    </ion-item-sliding>
+    <button ion-item detail-push text-wrap *ngFor="let item of myevents" (click)="onClick(item)">
+      <ion-avatar item-start class="icon-block">
+        <img src="assets/imgs/ticket-icon.png">
+      </ion-avatar>
+      <ion-item><h1>{{item.event.eventTitle}}</h1> {{"texts.At" | translate}} {{item.event.date}}</ion-item>
+      <ion-note item-end word-wrap>
+          {{acceptedInvites(item)}} <ion-icon name="thumbs-up"></ion-icon> {{acceptedInvites(item)}} {{"texts.accepted" | translate}},<br>
+          {{openInvites(item)}} <ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}},<br>
+          {{waiting(item)}} <ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}
+      </ion-note>
+    </button >
   </ion-list>
 </ion-content>

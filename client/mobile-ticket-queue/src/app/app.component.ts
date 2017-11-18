@@ -2,12 +2,15 @@ import { Component, ViewChild } from '@angular/core';
 import { Nav, Platform } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { Globalization } from '@ionic-native/globalization';
+import { TranslateService } from 'ng2-translate';
 
 import { HomePage } from '../pages/home/home';
 import { TicketsService } from './tickets.service';
 import { SettingsPage } from '../pages/settings/settings';
 import { LocalNotifications } from '@ionic-native/local-notifications';
 import { MyeventsPage } from '../pages/myevents/myevents';
+import { defaultLanguage, availableLanguages, sysOptions } from './utils';
 
 @Component({
   templateUrl: 'app.html'
@@ -24,16 +27,16 @@ export class MyApp {
     public statusBar: StatusBar, 
     public splashScreen: SplashScreen, 
     public backendWS: TicketsService, 
+    private translate: TranslateService,
+    private globalization: Globalization,
     private localNotifications: LocalNotifications) {
 
     this.initializeApp();
 
-    // used for an example of ngFor and navigation
-    this.pages = [
-      { title: 'Home', component: HomePage },
-      { title: 'Settings', component: SettingsPage },
-       { title: 'MyEvents', component: MyeventsPage },
-    ];
+  }
+	getSuitableLanguage(language) {
+    language = language.substring(0, 2).toLowerCase();
+    return availableLanguages.some(x => x.code == language) ? language : defaultLanguage;
   }
 
   initializeApp() {
@@ -41,6 +44,25 @@ export class MyApp {
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
       this.statusBar.styleDefault();
+
+      // this language will be used as a fallback when a translation isn't found in the current language
+      this.translate.setDefaultLang(defaultLanguage);
+      if ((<any>window).cordova) {
+        this.globalization.getPreferredLanguage().then(result => {
+          var language = this.getSuitableLanguage(result.value);
+          this.translate.use(language);
+          sysOptions.systemLanguage = language;
+        });
+      } else {
+        let browserLanguage = this.translate.getBrowserLang() || defaultLanguage;
+        var language = this.getSuitableLanguage(browserLanguage);
+        this.translate.use(language);
+        sysOptions.systemLanguage = language;
+      }
+      this.translate.onLangChange.subscribe(() => {
+        this.updateMenuWithCurrentLang();
+      });
+      this.updateMenuWithCurrentLang();
       this.splashScreen.hide();
       if (this.platform.is('cordova')) {
         this.localNotifications.registerPermission();
@@ -48,13 +70,26 @@ export class MyApp {
     });
   }
 
+  updateMenuWithCurrentLang() {
+    this.translate.get('loadAllTextsInCurrentLanguage').subscribe(text => {
+      this.pages = [
+        { title: 'Home', component: HomePage },
+        { title: this.translate.instant('texts.Setup'), component: SettingsPage },
+         { title: this.translate.instant('texts.MyEvents'), component: MyeventsPage },
+      ];  
+    });    
+  }
   openPage(page) {
+    if (this.nav.getActive().component === page.component) {
+      return;
+    }
     // Reset the content nav to have just this page
     // we wouldn't want the back button to show in this scenario
-    if (page.title === 'Settings') {
-      console.log('push');
+    if (page.component === SettingsPage) {
       this.nav.push(page.component);      
-    } else if (this.nav.getActive().component !== page.component) {
+    // } else if (page.component === MyeventsPage) {
+    //   this.nav.push(page.component);      
+    } else {
       this.nav.setRoot(page.component);
     }
   }

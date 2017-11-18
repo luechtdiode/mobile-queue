@@ -1,17 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { NavController, NavParams } from 'ionic-angular';
 import { HttpClient } from '@angular/common/http';
 import { TicketsService, EventTicketsSummary, User } from '../../app/tickets.service';
+import { onDeviceUserUrl, backendUserUrl, onDeviceUrl, backendUrl } from '../../app/utils';
+import { EventAdminPage } from '../eventadmin/eventadmin';
 
-const host = location.host;
-const path = location.pathname;
-const protocol = location.protocol;
-const backendUrl = protocol + "//" + host + path + "api/events";
-const onDeviceUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/events";
-const backendUserUrl = protocol + "//" + host + path + "api/users";
-const onDeviceUserUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/users";
-
-@IonicPage()
 @Component({
   selector: 'page-myevents',
   templateUrl: 'myevents.html',
@@ -32,24 +25,27 @@ export class MyeventsPage implements OnInit {
 
   ngOnInit(): void {
     this.ws.eventTicketSummaries.subscribe(ets => {
-      ets.invites.filter(invite => this.usernames[invite.userid] === undefined)
-      .forEach(invite => {
-        this.http.get(onDeviceUserUrl + '/' + invite.userid).subscribe(
-          (data: User) => {
-            this.usernames[invite.userid] = data.name;
-          }, (err) => this.http.get(backendUserUrl + '/' + invite.userid).subscribe(
-            (data: User) => {
-              this.usernames[invite.userid] = data.name;
-              // data.json().then(user => this.usernames[invite.userid] = user.name);
-            }))});
       this.myevents = [...this.myevents.filter(e => e.event.id !== ets.event.id), ets].sort((a, b): number => {
         return a.event.eventTitle.localeCompare(b.event.eventTitle);
       });
     });
   }
 
-  getUserName(id: number) {
-    return this.usernames[id] || id;
+  onClick(summary: EventTicketsSummary) {
+    this.navCtrl.push(EventAdminPage, { 'eventSummary': summary });
+  }
+
+
+  acceptedInvites(summary: EventTicketsSummary) {
+    return summary.invites.filter(item => item.state === 'Confirmed').reduce((acc, ticket) => acc + ticket.participants, 0);
+  }
+
+  openInvites(summary: EventTicketsSummary) {
+    return summary.invites.filter(item => item.state === 'Called').reduce((acc, ticket) => acc + ticket.participants, 0);
+  }
+
+  waiting(summary: EventTicketsSummary) {
+    return summary.invites.filter(item => item.state === 'Issued').reduce((acc, ticket) => acc + ticket.participants, 0);
   }
 
   createEvent(event: Event) {
@@ -62,14 +58,4 @@ export class MyeventsPage implements OnInit {
         }));
   }
 
-  invite(event: EventTicketsSummary) {
-    console.log(event);
-    this.http.get(onDeviceUrl + `/${event.event.id}/${event.event.groupsize}`).subscribe(
-      (data: Response) => {
-        
-      }, (err) => this.http.get(backendUrl + `/${event.event.id}/${event.event.groupsize}`).subscribe(
-        (data: Response) => {
-        
-        }));
-  }
 }

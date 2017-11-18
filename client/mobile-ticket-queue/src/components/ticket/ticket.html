@@ -1,5 +1,5 @@
 <ion-item-sliding #slidingItem text-wrap>
-  <ion-item class="top-aligned">
+  <ion-item class="top-aligned" >
     <ion-avatar *ngIf="!cancelled && !accepted" item-start class="icon-block subscribed">
       <ion-icon name="checkmark-circle"></ion-icon>
     </ion-avatar>
@@ -10,41 +10,43 @@
     <ion-avatar *ngIf="accepted" item-start class="icon-block icon-block accepted">
       <ion-icon name="ios-clock"></ion-icon>
     </ion-avatar>
-    <div>
-      <h2>{{subscribedEvent.description}} {{subscribedEvent.ticket.participants}} person(s)</h2>
+    <div (click)=toggleActions()>
+      <h2>{{subscribedEvent.description}} {{"texts.For" | translate}} {{subscribedEvent.ticket.participants}} {{'texts.person(s)' | translate}}</h2>
    
-      <ion-list inline>
+      <ion-list inline (click)=toggleActions()>
         <span style="font-size: 75%"><ion-icon name="clock"></ion-icon>&nbsp;{{lastMessageTitle.split(' - ')[0]}}</span> - {{lastMessageTitle.split(' - ')[1]}}
         <p>
           {{lastMessage}}
         </p>
         <span style="font-size:75%">
           <ion-note>
-            <ion-icon name="thumbs-up"></ion-icon> {{ticketSummary?.acceptedCnt}} accepted,&nbsp;&nbsp;
-            {{ticketSummary?.waitingCnt}} waiting,&nbsp;&nbsp;
-            your position {{ticketSummary?.waitingPosition}}
+            <ion-icon name="thumbs-up"></ion-icon> {{ticketSummary?.acceptedCnt}} {{"texts.accepted" | translate}},&nbsp;&nbsp;
+            {{ticketSummary?.waitingCnt}} {{"texts.waiting" | translate}},&nbsp;&nbsp;
+            {{"texts.your position" | translate}} {{ticketSummary?.waitingPosition}}
           </ion-note>
         </span>
       </ion-list>
     </div>
     <div item-end style="vertical-align: top;">
-      <ion-badge *ngIf="!called && !accepted" item-end>Issued</ion-badge>
-      <ion-badge *ngIf="called" item-end>Called</ion-badge>
+      <ion-badge *ngIf="!called && !accepted" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
+      <ion-badge *ngIf="called" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
       <ion-badge *ngIf="accepted" color="secondary" item-end>
-        <h1>Accepted</h1>
-      </ion-badge>
+        <h1>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</h1>
+      </ion-badge><br>
+      <button *ngIf="showActions && (loggedIn | async) && !cancelled && !accepted" class="ion-minus-circled" ion-button color="danger" (click)="cancel(slidingItem)">{{"texts.TicketCancel" | translate}}</button>
+      <button *ngIf="showActions && (loggedIn | async) && (accepted || cancelled)" class="ion-minus-circled" ion-button color="danger" (click)="close(slidingItem)">{{"texts.Close" | translate}}</button>
     </div>
     <div>
-      <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button large block (click)="skip(slidingItem)">Skip</button>
+      <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button large block (click)="skip(slidingItem)">{{"texts.Skip" | translate}}</button>
       <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button large block color="secondary" button-positive
-        (click)="accept(slidingItem)">Accept</button>
+        (click)="accept(slidingItem)">{{"texts.Accept" | translate}}</button>
     </div>
   </ion-item>
-  <ion-item-options side="left">
-    <button *ngIf="(loggedIn | async) && !cancelled && !accepted" class="ion-minus-circled" ion-button color="danger" (click)="cancel(slidingItem)">Cancel</button>
-    <button *ngIf="(loggedIn | async) && (accepted || cancelled)" class="ion-minus-circled" ion-button color="danger" (click)="close(slidingItem)">Close</button>
+  <ion-item-options  side="right">
+    <button *ngIf="(loggedIn | async) && !cancelled && !accepted" class="ion-minus-circled" ion-button color="danger" (click)="cancel(slidingItem)">{{"texts.TicketCancel" | translate}}</button>
+    <button *ngIf="(loggedIn | async) && (accepted || cancelled)" class="ion-minus-circled" ion-button color="danger" (click)="close(slidingItem)">{{"texts.Close" | translate}}</button>
   </ion-item-options>
-  <!-- <ion-item-options side="right">
+  <!-- <ion-item-options side="left">
     <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button color="secondary" (click)="skip(slidingItem)">Skip</button>
     <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button button-positive (click)="accept(slidingItem)">Accept</button>
   </ion-item-options> -->
