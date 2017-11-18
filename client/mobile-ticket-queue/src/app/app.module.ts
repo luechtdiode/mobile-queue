@@ -18,6 +18,7 @@ import { SettingsPage } from '../pages/settings/settings';
 import { TicketComponent } from '../components/ticket/ticket';
 import { SubscribePage } from '../pages/subscribe/subscribe';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { MyeventsPageModule } from '../pages/myevents/myevents.module';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
     BrowserModule,
     HttpClientModule,
     IonicModule.forRoot(MyApp),
+    MyeventsPageModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [

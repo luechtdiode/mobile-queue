@@ -7,6 +7,7 @@ import { HomePage } from '../pages/home/home';
 import { TicketsService } from './tickets.service';
 import { SettingsPage } from '../pages/settings/settings';
 import { LocalNotifications } from '@ionic-native/local-notifications';
+import { MyeventsPage } from '../pages/myevents/myevents';
 
 @Component({
   templateUrl: 'app.html'
@@ -22,7 +23,8 @@ export class MyApp {
     public platform: Platform, 
     public statusBar: StatusBar, 
     public splashScreen: SplashScreen, 
-    public backendWS: TicketsService, private localNotifications: LocalNotifications) {
+    public backendWS: TicketsService, 
+    private localNotifications: LocalNotifications) {
 
     this.initializeApp();
 
@@ -30,6 +32,7 @@ export class MyApp {
     this.pages = [
       { title: 'Home', component: HomePage },
       { title: 'Settings', component: SettingsPage },
+       { title: 'MyEvents', component: MyeventsPage },
     ];
   }
 
