@@ -13,6 +13,12 @@ import { BackgroundMode } from '@ionic-native/background-mode';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { combineLatest } from 'rxjs/operator/combineLatest';
 
+const host = location.host;
+const path = location.pathname;
+const protocol = location.protocol;
+const backendUrl = protocol + "//" + host + path + "api/events";
+const onDeviceUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/events";
+
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
@@ -75,11 +81,6 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   initializeItems() {
-    const host = location.host;
-    const path = location.pathname;
-    const protocol = location.protocol;
-    const backendUrl = protocol + "//" + host + path + "api/events";
-    const onDeviceUrl = "https://38qniweusmuwjkbr.myfritz.net/mbq/api/events";
     this.http.get(onDeviceUrl).subscribe(
       (data: EventResponse) => {
         this.setItmes(data);

@@ -10,7 +10,18 @@ export interface Event {
   date: Date;
   eventTitle: string;
   userid: number;
+  groupsize: number;
 }
+
+export interface User {  
+  name: string;
+  deviceIds: string[];
+  id: number;
+  mail: string;
+  mobile: string;
+  password: string;
+}
+
 export interface EventResponse {
   events: Event[];
 }
@@ -34,6 +45,12 @@ export interface UserTicketSummary {
   waitingCnt?: number;
   acceptedCnt?: number;
   calledCnt?: number;
+  type?: string;
+}
+
+export interface EventTicketsSummary {
+  event: Event;
+  invites: Ticket[];
   type?: string;
 }
 
@@ -70,6 +87,7 @@ export class TicketsService {
   ticketExpired = new ReplaySubject<TicketMessage>(10);
   ticketDeleted = new ReplaySubject<TicketMessage>(10);
   ticketSummaries = new ReplaySubject<UserTicketSummary>();
+  eventTicketSummaries = new ReplaySubject<EventTicketsSummary>();
   logMessages = new BehaviorSubject<string>("");
   lastMessages: string[] = [];
 
@@ -366,6 +384,8 @@ export class TicketsService {
           case 'UserTicketsSummary':
             this.ticketSummaries.next(message);
             break;
+          case 'EventTicketsSummary':
+          this.eventTicketSummaries.next(message);
           default:
             this.logMessages.next('unknown message: ' + evt.data);
         }

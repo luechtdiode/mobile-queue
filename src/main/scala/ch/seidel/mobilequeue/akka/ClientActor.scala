@@ -21,6 +21,7 @@ import ch.seidel.mobilequeue.akka.UserRegistryActor.{ ActionPerformed => UserAct
 import ch.seidel.mobilequeue.akka.UserRegistryActor.{ PropagateTicketIssued, PropagateTicketCalled, PropagateTicketSkipped, PropagateTicketClosed, PropagateTicketConfirmed }
 import ch.seidel.mobilequeue.http.JsonSupport
 import ch.seidel.mobilequeue.model._
+import ch.seidel.mobilequeue.akka.TicketRegistryActor.EventTicketsSummary
 
 class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) extends Actor with JsonSupport /*with Hashing*/ {
   import akka.pattern.pipe
@@ -134,6 +135,10 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
     // system actions
     case ts: UserTicketsSummary =>
       val tm = TextMessage(ts.toJson.toJsonStringWithType(ts))
+      wsSend.foreach(_ ! tm)
+
+    case ets: EventTicketsSummary =>
+      val tm = TextMessage(ets.toJson.toJsonStringWithType(ets))
       wsSend.foreach(_ ! tm)
 
     case KeepAlive => handleKeepAlive

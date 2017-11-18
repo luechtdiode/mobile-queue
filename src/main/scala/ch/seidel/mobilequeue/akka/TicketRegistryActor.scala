@@ -9,6 +9,7 @@ import scala.util.Failure
 
 import ch.seidel.mobilequeue.model._
 import ch.seidel.mobilequeue.akka.UserRegistryActor.ClientConnected
+import ch.seidel.mobilequeue.akka.EventRegistryActor.ConnectEventUser
 
 object TicketRegistryActor {
   sealed trait TicketRegistryMessage
@@ -21,9 +22,10 @@ object TicketRegistryActor {
   final case class CloseTicket(id: Long) extends TicketRegistryMessage
 
   sealed trait TicketRegistryEvent
+  final case class OwnerEventDeleted(event: Event) extends TicketRegistryEvent
   final case class ActionPerformed(ticket: Ticket, description: String) extends TicketRegistryEvent
   final case class TicketCreated(ticket: TicketIssued, requestingClient: ActorRef) extends TicketRegistryEvent
-  final case class EventTicketsSummary(invites: Iterable[Ticket]) extends TicketRegistryEvent {
+  final case class EventTicketsSummary(event: Event, invites: Iterable[Ticket]) extends TicketRegistryEvent {
     private lazy val waiting = invites.filter(t => t.state match { case Issued => true case Called => true case Skipped => true case _ => false })
     private lazy val waitingCnt = waiting.map(_.participants).sum
     private lazy val calledCnt = invites.filter(t => t.state match { case Confirmed => true case Called => true case Skipped => true case _ => false }).map(_.participants).sum
@@ -62,6 +64,16 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   val WITHOUT_CLOSING = false;
 
   var requiredGroupSize: Int = event.groupsize
+  var eventOwner: Option[ActorRef] = None
+
+  override def postStop: Unit = {
+    eventOwner match {
+      case Some(clientActor) =>
+        clientActor ! OwnerEventDeleted(event)
+        eventOwner = None
+      case _ =>
+    }
+  }
 
   case class TicketClientHolder(ticket: Ticket, clients: Set[ActorRef]) {
     def toNewState(newstate: TicketState) = {
@@ -76,7 +88,8 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
   }
 
   def sendTicketsSummaries(tickets: Map[Long, TicketClientHolder]) = {
-    val ts = EventTicketsSummary(tickets.values.map(_.ticket))
+    val ts = EventTicketsSummary(event, tickets.values.map(_.ticket))
+    eventOwner.foreach(_ ! ts)
     tickets.values.foreach(_.sendSummaryToClient(ts))
     ts
   }
@@ -103,7 +116,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
       sender ! workWith(newTicketCollection)
 
     case GetAccepted =>
-      sender ! EventTicketsSummary(tickets.values.map(_.ticket).filter(t => t.state match { case Confirmed => true case _ => false }))
+      sender ! EventTicketsSummary(event, tickets.values.map(_.ticket).filter(t => t.state match { case Confirmed => true case Called => true case _ => false }))
 
     case TicketConfirmed(ticket) =>
       workWith(mapWithNewState(Map(ticket.id -> tickets(ticket.id)), Confirmed, tickets))
@@ -159,7 +172,19 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         case _ =>
       }
 
+    case connected @ ConnectEventUser(userid, clientActor) =>
+      if (userid == event.userid) {
+        watch(clientActor)
+        eventOwner = Some(clientActor)
+        clientActor ! EventTicketsSummary(event, tickets.values.map(_.ticket))
+      }
+
     case connected @ ClientConnected(user, _, clientActor) =>
+      if (user.id == event.userid) {
+        watch(clientActor)
+        eventOwner = Some(clientActor)
+        clientActor ! EventTicketsSummary(event, tickets.values.map(_.ticket))
+      }
       val selectedTickets = tickets
         .map(_._2)
         .filter(ticketholder => ticketholder.ticket.userid == user.id)
@@ -168,7 +193,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
           case Confirmed => false
           case _ => true
         })
-      if (selectedTickets.nonEmpty) context.watch(clientActor)
+      if (selectedTickets.nonEmpty) watch(clientActor)
       val newTickets = selectedTickets.foldLeft(tickets) { (acc, ticketholder) =>
         println(s"connecting client-actor to ticket ${ticketholder.ticket}")
         val newClientActorList = ticketholder.clients + clientActor
@@ -181,6 +206,10 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
     case Terminated(clientActor) =>
       println("TicketRegistry unwatching " + clientActor)
       context.unwatch(clientActor)
+      eventOwner match {
+        case Some(owner) if (owner == clientActor) => eventOwner = None
+        case _ =>
+      }
       tickets
         .filter(pair => pair._2.clients.contains(clientActor))
         .map(_._1)

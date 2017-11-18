@@ -41,7 +41,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val ticketExpiredFormat = jsonFormat1(TicketExpired)
   implicit val ticketAcceptedFormat = jsonFormat1(TicketAccepted)
   implicit val ticketDeletedFormat = jsonFormat1(TicketClosed)
-  implicit val summaryFormat = jsonFormat(EventTicketsSummary, "invites")
+  implicit val summaryFormat = jsonFormat(EventTicketsSummary, "event", "invites")
   implicit val userTicketSummaryFormat = jsonFormat7(UserTicketsSummary)
 
   // support for websocket incoming json-messages

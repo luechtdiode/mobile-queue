@@ -22,6 +22,8 @@ object EventRegistryActor {
   final case object GetEvents extends EventRegistryMessage
   final case class CreateEvent(event: Event) extends EventRegistryMessage
   final case class GetEvent(id: Long) extends EventRegistryMessage
+  final case class GetUserEvents(userid: Long) extends EventRegistryMessage
+  final case class ConnectEventUser(userid: Long, clientActor: ActorRef) extends EventRegistryMessage
   final case class DeleteEvent(id: Long) extends EventRegistryMessage
 
   final case class GetEventTickets(eventId: Long) extends EventRegistryMessage
@@ -30,12 +32,18 @@ object EventRegistryActor {
   final case class CreateEventTicket(ticket: Ticket, clientActor: ActorRef) extends EventRegistryMessage
   final case class GetEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
   final case class CloseEventTicket(eventId: Long, id: Long) extends EventRegistryMessage
-  def props: Props = Props[EventRegistryActor]
+
+  sealed trait EventRegistryEvent
+  final case class EventCreated(event: Event) extends EventRegistryEvent
+
+  def props: Props = Props(classOf[EventRegistryActor])
 }
 
 class EventRegistryActor extends Actor /*with ActorLogging*/ {
   import EventRegistryActor._
   import context._
+
+  var userRegistryActor: Option[ActorRef] = None
 
   def operateWith(ticketsForEventActors: Map[Event, ActorRef], events: Map[Long, Event]): Receive = {
 
@@ -49,9 +57,21 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
       watch(tickets)
       become(operateWith(ticketsForEventActors + (withId -> tickets), events + (withId.id -> withId)))
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")
+      userRegistryActor.foreach(_ ! EventCreated(withId))
 
     case GetEvent(id) =>
       sender() ! events.get(id)
+
+    case GetUserEvents(userid) =>
+      sender() ! events.filter(event => event._2.userid == userid).map(_._2)
+
+    case ceu @ ConnectEventUser(userid, _) =>
+      val userevents = events.filter(event => event._2.userid == userid).map(e => {
+        val (id, event) = e
+        ticketsForEventActors(event) ! ceu
+        event
+      })
+      sender() ! userevents
 
     case DeleteEvent(id) =>
       val toDelete = events.get(id).getOrElse(Event(id, 0, "not existing!", "", 0))
@@ -87,10 +107,6 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
         .filter(ta => ta._1.id == tj.ticket.eventid)
         .map(_._2)
         .foreach(_.forward(tj))
-    //    case tc: TicketCreated =>
-    //      ticketsForEventActors.values
-    //        .filter(_ != sender)
-    //        .foreach(_.forward(tc))
 
     case GetEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTicket(id))))
@@ -98,13 +114,9 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
     case CloseEventTicket(eventId: Long, id: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(CloseTicket(id))))
 
-    //    case td: TicketClosed =>
-    //      ticketsForEventActors.values
-    //        .filter(_ != sender)
-    //        .foreach(_.forward(td))
-
     // supervision of connected clients
     case connected: ClientConnected =>
+      userRegistryActor = Some(sender)
       ticketsForEventActors.values.foreach(_.forward(connected))
 
     // supervision of child-actors (tickets per event)

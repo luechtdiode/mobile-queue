@@ -12,5 +12,10 @@ case class Event(
   @(ApiModelProperty @field)(value = "standard group size") groupsize: Int = 10
 )
 
+//case class MaterializedEvent (
+//  @(ApiModelProperty @field)(value = "unique identifier for the event") id: Long,
+//  @(ApiModelProperty @field)(value = "tickets") tickets: Tickets,
+//    )
+//    
 @ApiModel(description = "A List of event object")
 final case class Events(events: Seq[Event])
