@@ -198,7 +198,7 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
         println(s"connecting client-actor to ticket ${ticketholder.ticket}")
         val newClientActorList = ticketholder.clients + clientActor
         println(s"actually registered clients: ${newClientActorList.size}")
-        sender() ! TicketReactivated(ticketholder.ticket)
+        clientActor ! TicketReactivated(ticketholder.ticket)
         acc - ticketholder.ticket.id + (ticketholder.ticket.id -> TicketClientHolder(ticketholder.ticket, newClientActorList))
       }
       workWith(newTickets)
