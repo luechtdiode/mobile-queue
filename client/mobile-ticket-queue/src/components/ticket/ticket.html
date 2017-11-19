@@ -10,31 +10,33 @@
     <ion-avatar *ngIf="accepted" item-start class="icon-block icon-block accepted">
       <ion-icon name="ios-clock"></ion-icon>
     </ion-avatar>
-    <div (click)=toggleActions()>
-      <h2>{{subscribedEvent.description}} {{"texts.For" | translate}} {{subscribedEvent.ticket.participants}} {{'texts.person(s)' | translate}}</h2>
+    <div>
+      <h2>{{subscribedEvent.description}} {{"texts.For" | translate}} {{subscribedEvent.ticket.participants}} {{'texts.person(s)' | translate}}
+        <ion-badge *ngIf="!called && !accepted" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
+        <ion-badge *ngIf="called" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
+        <ion-badge *ngIf="accepted" color="secondary" item-end>
+          <h1>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</h1>
+        </ion-badge><br>
+        <button *ngIf="showActions && (loggedIn | async) && !cancelled && !accepted" class="ion-minus-circled" ion-button color="danger" (click)="cancel(slidingItem)">{{"texts.TicketCancel" | translate}}</button>
+        <button *ngIf="showActions && (loggedIn | async) && (accepted || cancelled)" class="ion-minus-circled" ion-button color="danger" (click)="close(slidingItem)">{{"texts.Close" | translate}}</button>
+      </h2>
    
-      <ion-list inline (click)=toggleActions()>
+      <ion-list inline class="bubble me">
         <span style="font-size: 75%"><ion-icon name="clock"></ion-icon>&nbsp;{{lastMessageTitle.split(' - ')[0]}}</span> - {{lastMessageTitle.split(' - ')[1]}}
         <p>
           {{lastMessage}}
         </p>
         <span style="font-size:75%">
-          <ion-note>
-            <ion-icon name="thumbs-up"></ion-icon> {{ticketSummary?.acceptedCnt}} {{"texts.accepted" | translate}},&nbsp;&nbsp;
+            <div item-end>
+                <span style="font-weight: bold;">{{ticketSummary?.acceptedCnt}}</span> <span style="color: rgb(14, 170, 0);"><ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}}</span><br>
+                <span style="font-weight: bold;">{{ticketSummary?.waitingCnt}}</span> <span style="color: rgb(253, 174, 4);"><ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span><br>
+                <span style="font-weight: bold;">{{ticketSummary?.waitingPosition}}</span> <span style="color: rgb(68, 124, 255);"><ion-icon name="timer"></ion-icon> {{"texts.your position" | translate}}</span>
+              </div>                  
+            <!-- <ion-icon name="thumbs-up"></ion-icon> {{ticketSummary?.acceptedCnt}} {{"texts.accepted" | translate}},&nbsp;&nbsp;
             {{ticketSummary?.waitingCnt}} {{"texts.waiting" | translate}},&nbsp;&nbsp;
-            {{"texts.your position" | translate}} {{ticketSummary?.waitingPosition}}
-          </ion-note>
+            {{"texts.your position" | translate}} {{ticketSummary?.waitingPosition}} -->
         </span>
       </ion-list>
-    </div>
-    <div item-end style="vertical-align: top;">
-      <ion-badge *ngIf="!called && !accepted" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
-      <ion-badge *ngIf="called" item-end>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</ion-badge>
-      <ion-badge *ngIf="accepted" color="secondary" item-end>
-        <h1>{{"codes.TicketState." + subscribedEvent.ticket.state | translate}}</h1>
-      </ion-badge><br>
-      <button *ngIf="showActions && (loggedIn | async) && !cancelled && !accepted" class="ion-minus-circled" ion-button color="danger" (click)="cancel(slidingItem)">{{"texts.TicketCancel" | translate}}</button>
-      <button *ngIf="showActions && (loggedIn | async) && (accepted || cancelled)" class="ion-minus-circled" ion-button color="danger" (click)="close(slidingItem)">{{"texts.Close" | translate}}</button>
     </div>
     <div>
       <button *ngIf="(loggedIn | async) && called" class="ion-minus-circled" ion-button large block (click)="skip(slidingItem)">{{"texts.Skip" | translate}}</button>
