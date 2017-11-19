@@ -1,4 +1,4 @@
-cordova.define("cordova-plugin-vibration.Vibration", function(require, exports, module) { /*
+cordova.define("cordova-plugin-globalization.GlobalizationError", function(require, exports, module) { /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,11 +19,24 @@ cordova.define("cordova-plugin-vibration.Vibration", function(require, exports, 
  *
 */
 
-module.exports = {
-    vibrate: function (success, fail, milliseconds) {
-        console.log('Vibration is not supported');
-        return false;
-    }
+/**
+ * Globalization error object
+ *
+ * @constructor
+ * @param code
+ * @param message
+ */
+var GlobalizationError = function (code, message) {
+    this.code = code || null;
+    this.message = message || '';
 };
+
+// Globalization error codes
+GlobalizationError.UNKNOWN_ERROR = 0;
+GlobalizationError.FORMATTING_ERROR = 1;
+GlobalizationError.PARSING_ERROR = 2;
+GlobalizationError.PATTERN_ERROR = 3;
+
+module.exports = GlobalizationError;
 
 });

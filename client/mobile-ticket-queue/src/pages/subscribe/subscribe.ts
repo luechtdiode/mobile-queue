@@ -16,7 +16,6 @@ export class SubscribePage {
   constructor(public navCtrl: NavController, public navParams: NavParams, public ws: TicketsService) {
     this.event = navParams.get('event');
     this.initialMax = this.event.groupsize;
-    console.log(this.event.groupsize,  this.initialMax );
   }
 
   registerTicketForEvent(count) {

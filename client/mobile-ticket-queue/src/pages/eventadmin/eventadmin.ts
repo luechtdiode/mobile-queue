@@ -1,7 +1,7 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 // import { BarcodeScanner } from '@ionic-native/barcode-scanner';
 import { TicketsService, EventTicketsSummary } from '../../app/tickets.service';
-import { onDeviceUrl, backendUrl } from '../../app/utils';
+import { secureHostURL, onDeviceUrl, backendUrl } from '../../app/utils';
 import { Subscription } from 'rxjs';
 import { Observable } from 'rxjs/Observable';
 import { NavParams } from 'ionic-angular';
@@ -13,9 +13,9 @@ import { UsersService } from '../../app/users.service';
   templateUrl: 'eventadmin.html'
 })
 export class EventAdminPage implements OnInit, OnDestroy {
+  mobileUrl: string;
+  browserUrl: string;
   tsSubscription: Subscription;
-  
-  barcode: Promise<any>;
   
   private _eventSummary: EventTicketsSummary;
 
@@ -46,7 +46,8 @@ export class EventAdminPage implements OnInit, OnDestroy {
         return 0;
       });
     this.maxInvites = summary.event.groupsize * 2
-    // this.barcode = this.barcodeScanner.encode(this.barcodeScanner.Encode.TEXT_TYPE, "mobileticket://events/" + summary.event.id + "/subscribe");
+    this.mobileUrl = 'mobileticket://events/' + summary.event.id + '/subscribe';
+    this.browserUrl = secureHostURL + '?subscribe=' + summary.event.id;
   }
 
   get eventSummary(): EventTicketsSummary {

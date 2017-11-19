@@ -72,7 +72,6 @@ export class HomePage implements OnInit, OnDestroy {
       this.createdSubscription.unsubscribe();
       this.externalLoaderSubscription.unsubscribe();
     }
-    console.log('home destroyed');
   }
 
   initializeItems() {
@@ -89,7 +88,6 @@ export class HomePage implements OnInit, OnDestroy {
     this.items = response.events;
 
     this.updateUnsubscribedItems();
-    console.log('items retrieved');
 
     const addTicket = (msg: TicketMessage) => {
       this.removeTicket(msg.ticket);
@@ -102,12 +100,10 @@ export class HomePage implements OnInit, OnDestroy {
 
     if (!this.createdSubscription) {
       this.createdSubscription = this.ws.ticketCreated.subscribe(msg => {
-        console.log('ticket issued');
         addTicket(msg);
       });
 
       this.activatedSubscription = this.ws.ticketActivated.subscribe(msg => {
-        console.log('ticket activated');
         addTicket(msg);
       });
       this.ws.init();

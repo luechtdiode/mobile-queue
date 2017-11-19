@@ -29,9 +29,15 @@ http://ionicframework.com/docs/native/qr-scanner/
 $ ionic cordova plugin add cordova-plugin-qrscanner
 $ npm install --save @ionic-native/qr-scanner
 
+https://www.djamware.com/post/59bb219f80aca768e4d2b13e/example-of-ionic-3-angular-4-cordova-barcode-and-qr-code-scanner
+
 https://github.com/mapsplugin/cordova-plugin-googlemaps
 
 Icons
 https://100soft.us/projects/#/doctor-strange-gifs-1/
 
+I18N
+https://medium.com/appseed-io/internationalize-and-localize-your-ionic-2-application-4ad3d6356b3f
+
+External Loader
 cordova plugin add https://github.com/EddyVerbruggen/LaunchMyApp-PhoneGap-Plugin.git --variable URL_SCHEME=mobileticket

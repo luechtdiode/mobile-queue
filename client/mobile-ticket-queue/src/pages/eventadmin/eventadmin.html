@@ -8,8 +8,17 @@
 </ion-header>
 
 <ion-content>
+  
   <ion-list>
     <ion-item><h1>{{eventSummary.event.eventTitle}}</h1> {{"texts.At" | translate}} {{eventSummary.event.date}}</ion-item>
+    <ion-item>
+      <table width="100%">
+        <tr>
+          <td><qr-code [value]="mobileUrl" [size]="150"></qr-code><br>link to local device App</td>
+          <td><qr-code [value]="browserUrl" [size]="150"></qr-code><br>link to browser App</td>
+        </tr>
+      </table>
+    </ion-item>
 
     <ion-item>{{"texts.HowManyInvite" | translate}}<ion-badge item-end>{{eventSummary.event.groupsize}}</ion-badge></ion-item>
 

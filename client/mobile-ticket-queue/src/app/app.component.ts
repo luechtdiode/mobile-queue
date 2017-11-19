@@ -45,6 +45,14 @@ export class MyApp {
       // Here you can do any higher level native things you might need.
       this.statusBar.styleDefault();
 
+      if(window.location.href.indexOf('?subscribe=') > 0) {
+        try {
+          const eventid = parseInt(window.location.href.split('=')[1]);
+          localStorage.setItem("external_load", 'mobileticket://events/' + eventid + '/subscribe');        
+        } catch(e) {
+          console.log(e);
+        }
+      }
       // this language will be used as a fallback when a translation isn't found in the current language
       this.translate.setDefaultLang(defaultLanguage);
       if ((<any>window).cordova) {
