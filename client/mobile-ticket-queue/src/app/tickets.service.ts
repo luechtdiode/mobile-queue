@@ -371,11 +371,13 @@ export class TicketsService {
             break;
           case 'TicketClosed':
             this.ticketDeleted.next(message);
+            break;
           case 'UserTicketsSummary':
             this.ticketSummaries.next(message);
             break;
           case 'EventTicketsSummary':
-          this.eventTicketSummaries.next(message);
+            this.eventTicketSummaries.next(message);
+            break;
           default:
             this.logMessages.next('unknown message: ' + evt.data);
         }
