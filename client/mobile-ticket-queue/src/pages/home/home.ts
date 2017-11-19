@@ -10,7 +10,7 @@ import { SettingsPage } from '../settings/settings';
 import { SubscribePage } from '../subscribe/subscribe';
 import { Subscription } from 'rxjs';
 import { BackgroundMode } from '@ionic-native/background-mode';
-import { TranslateService } from 'ng2-translate';
+import { TranslateService } from '@ngx-translate/core';
 import { onDeviceUrl, backendUrl } from '../../app/utils';
 
 @Component({

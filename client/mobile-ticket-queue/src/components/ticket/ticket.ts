@@ -8,7 +8,7 @@ import { BackgroundMode } from '@ionic-native/background-mode';
 import { LocalNotifications } from '@ionic-native/local-notifications';
 import { Toast } from '@ionic-native/toast';
 import { Platform } from 'ionic-angular';
-import { TranslateService } from 'ng2-translate';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'ticket',
@@ -85,7 +85,7 @@ export class TicketComponent implements OnInit, OnDestroy {
       this.subscribedEvent.ticket = msg.ticket;
       this.vibration.vibrate([1000 , 1000 , 500, 500, 1000]);
       this.lastMessageTitle = this.translate.instant('messages.LetsGo', {"moment": formatCurrentMoment()});
-      this.lastMessage = this.translate.instant("Please confirm");
+      this.lastMessage = this.translate.instant("messages.Please confirm");
       if (this.platform.is('cordova')) {
         try {
           this.localNotifications.schedule({
