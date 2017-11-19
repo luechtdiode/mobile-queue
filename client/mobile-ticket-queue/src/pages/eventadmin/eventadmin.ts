@@ -13,6 +13,7 @@ import { UsersService } from '../../app/users.service';
   templateUrl: 'eventadmin.html'
 })
 export class EventAdminPage implements OnInit, OnDestroy {
+  tsUpdatedSubscription: Subscription;
   mobileUrl: string;
   browserUrl: string;
   tsSubscription: Subscription;
@@ -26,12 +27,17 @@ export class EventAdminPage implements OnInit, OnDestroy {
   
   ngOnDestroy(): void {
     this.tsSubscription.unsubscribe();
+    this.tsUpdatedSubscription.unsubscribe();
   }
+
   ngOnInit(): void {
     this.tsSubscription = this.ws.eventTicketSummaries.subscribe(ets => {
       if (ets.event.id === this.eventSummary.event.id) {
         this.eventSummary = ets;
       }
+    });
+    this.tsUpdatedSubscription = this.ws.eventUpdated.subscribe(updatedEvent => {
+      this.eventSummary.event = this.eventSummary.event.id !== updatedEvent.id ?  this.eventSummary.event : updatedEvent;
     });
   }
 

@@ -77,6 +77,17 @@ trait EventRoutes extends JsonSupport with RouterLogging {
                   complete((StatusCodes.OK, performed))
                 }
                 //#events-delete-logic
+              } ~
+              put {
+                entity(as[Event]) { event =>
+                  val eventCreated: Future[ActionPerformed] =
+                    (eventRegistryActor ? UpdateEvent(event)).mapTo[ActionPerformed]
+                  onSuccess(eventCreated) { performed =>
+                    log.info("Created event [{}]: {}", performed.event, performed.description)
+                    complete((StatusCodes.Created, performed))
+                  }
+                  //#events-put-logic
+                }
               }
           }
         } ~

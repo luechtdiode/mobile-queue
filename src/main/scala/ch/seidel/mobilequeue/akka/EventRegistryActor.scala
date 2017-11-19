@@ -21,6 +21,7 @@ object EventRegistryActor {
   final case class ActionPerformed(event: Event, description: String) extends EventRegistryMessage
   final case object GetEvents extends EventRegistryMessage
   final case class CreateEvent(event: Event) extends EventRegistryMessage
+  final case class UpdateEvent(event: Event) extends EventRegistryMessage
   final case class GetEvent(id: Long) extends EventRegistryMessage
   final case class GetUserEvents(userid: Long) extends EventRegistryMessage
   final case class ConnectEventUser(userid: Long, clientActor: ActorRef) extends EventRegistryMessage
@@ -35,6 +36,8 @@ object EventRegistryActor {
 
   sealed trait EventRegistryEvent
   final case class EventCreated(event: Event) extends EventRegistryEvent
+  final case class EventUpdated(event: Event) extends EventRegistryEvent
+  final case class EventDeleted(id: Long) extends EventRegistryEvent
 
   def props: Props = Props(classOf[EventRegistryActor])
 }
@@ -59,6 +62,16 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
       sender() ! ActionPerformed(withId, s"Event ${withId.id} created.")
       userRegistryActor.foreach(_ ! EventCreated(withId))
 
+    case UpdateEvent(event) =>
+      val oldEvent: Event = events(event.id)
+      val existingTicketActor: Option[ActorRef] = ticketsForEventActors.get(oldEvent)
+      existingTicketActor.foreach(tickets => {
+        tickets ! UpdateEvent(event)
+        become(operateWith(ticketsForEventActors - oldEvent + (event -> tickets), events + (event.id -> event)))
+        sender() ! ActionPerformed(event, s"Event ${event.id} updated.")
+        userRegistryActor.foreach(_ ! EventUpdated(event))
+      })
+
     case GetEvent(id) =>
       sender() ! events.get(id)
 
@@ -82,6 +95,7 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
         case _ =>
       }
       sender() ! ActionPerformed(toDelete, s"Event ${id} deleted.")
+      userRegistryActor.foreach(_ ! EventDeleted(id))
 
     case GetEventTickets(eventId: Long) =>
       events.get(eventId).foreach(ticketsForEventActors.get(_).foreach(_.forward(GetTickets)))

@@ -48,6 +48,17 @@ export class HomePage implements OnInit, OnDestroy {
         this.ticketSubscriptions = [];
       }
     });
+    this.ws.eventUpdated.subscribe(updatedEvent => {
+      this.items = this.items.map(event => event.id !== updatedEvent.id ? event : updatedEvent);
+      this.filtereditems = this.filtereditems.map(event => event.id !== updatedEvent.id ? event : updatedEvent);
+      this.unsubscribedItems = this.unsubscribedItems.map(event => event.id !== updatedEvent.id ? event : updatedEvent);
+    });
+    this.ws.eventDeleted.subscribe(eventid => {
+      this.items = this.items.filter(event => event.id !== eventid);
+      this.filtereditems = this.filtereditems.filter(event => event.id !== eventid);
+      this.unsubscribedItems = this.unsubscribedItems.filter(event => event.id !==eventid);
+      this.ticketSubscriptions = this.ticketSubscriptions.filter(sub => sub.ticket.eventid !== eventid);
+    });
     this.externalLoaderSubscription = Observable.combineLatest(this.ws.identified,  Observable.interval(1000)).subscribe(latest => {
       const [identified, ] = latest;
       const url = localStorage.getItem("external_load");

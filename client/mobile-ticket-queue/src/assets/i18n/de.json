@@ -13,14 +13,15 @@
     "Cancel": "Abbrechen",
     "Close": "Schliessen",
     "Setup": "Einrichten",
+    "Settings": "Einstellungen",
     "InitTitle": "Bist Du zum ersten Mal hier?",
     "InitBody": "Bitte gib Dein Name unter 'Einrichten' ein, um mit unserem Service verbinden zu können.",
     "Connect": "Verbinden",
     "ServiceDisconnectedTitle": "Der Service ist nicht verbunden.",
     "ServiceDisconnectedBody": "Prüfe bitte die Einstellungen.",
-    "Subscribed Events": "Gelöste Tickets",
-    "Available Events": "Verfügbare Ereignisse",
-    "MyEvents": "Meine Ereignisse",
+    "Subscribed Events": "Meine Tickets",
+    "Available Events": "Verfügbare Veranstaltungen",
+    "MyEvents": "Meine Veranstaltungen",
     "Subscribe": "Ticket für {{eventTitle}}",
     "HowMayPeople": "Wie viele seid Ihr?",
     "IssueTicket": "Ticket ausstellen",
@@ -28,7 +29,15 @@
     "Invite": "Einladen",
     "AdminEvent": "Anlass steuern",
     "OpenInvites": "offene Einladungen",
-    "PersonsFor": "Person(en) für"
+    "PersonsFor": "Person(en) für",
+    "CreateEvent": "Neue Veranstaltung anlegen",
+    "EditEvent": "Veranstaltung {{eventTitle}} bearbeiten",
+    "HowMayPeoplePerIteration": "Wie viele Personen sollen pro Runde eingeladen werden?",
+    "Save": "Speichern",
+    "EventTitle": "Veranstaltungs-Titel",
+    "EventDate": "Datum der Veranstaltung",
+    "CreateEventBody": "Füge eine Veranstaltung hinzu",
+    "Delete": "Löschen"
   },
   "messages": {
     "TicketRegistered": "{{moment}} - Ticket registriert",
@@ -50,7 +59,7 @@
     "is listening on ticket-service": "wartet auf Ereignisse vom Ticket-Service",
     "UserConnected": "{{username}} Verbunden",
     "UserDisconnected": "{{username}} getrennt",
-    "ApplySettings": "Bitte kontrolliere/vervollständige die Daten unter 'Settings'"
+    "ApplySettings": "Bitte kontrolliere/vervollständige die Daten unter 'Einrichten'"
   },
   "codes": {
     "TicketState": {

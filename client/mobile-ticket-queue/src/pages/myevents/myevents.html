@@ -9,16 +9,35 @@
 
 <ion-content>
   <ion-list>
-    <button ion-item detail-push text-wrap *ngFor="let item of myevents" (click)="onClick(item)">
-      <!-- <ion-avatar item-start class="icon-block">
-        <img src="assets/imgs/ticket-icon.png">
-      </ion-avatar> -->
-      <h1>{{item.event.eventTitle}}</h1> {{"texts.At" | translate}} {{item.event.date}}
-      <div item-end word-wrap>
-        <span style="font-weight: bold;">{{acceptedInvites(item)}}</span> <span style="color: rgb(14, 170, 0);"><ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}}</span><br>
-        <span style="font-weight: bold;">{{openInvites(item)}}</span> <span style="color: rgb(68, 124, 255);"><ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}}</span><br>
-        <span style="font-weight: bold;">{{waiting(item)}}</span> <span style="color: rgb(253, 174, 4);"><ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span>
-      </div>
-    </button >
+    <button ion-item *ngIf="!username" text-wrap (click)="onCreateNewEvent()">
+      <h2>{{"texts.CreateEvent" | translate}}</h2>
+      <p>{{"texts.CreateEventBody" | translate}}</p>
+      <ion-icon name="add-circle" item-right></ion-icon>
+    </button>
+    <ion-item-sliding #slidingItem text-wrap *ngFor="let item of myevents">
+      <button ion-item detail-push text-wrap  (click)="onClick(item)">
+        <!-- <ion-avatar item-start class="icon-block">
+          <img src="assets/imgs/ticket-icon.png">
+        </ion-avatar> -->
+        <h1>{{item.event.eventTitle}}</h1> {{"texts.At" | translate}} {{item.event.date}}
+        <div item-end word-wrap>
+          <span style="font-weight: bold;">{{acceptedInvites(item)}}</span>
+          <span style="color: rgb(14, 170, 0);">
+            <ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}}</span>
+          <br>
+          <span style="font-weight: bold;">{{openInvites(item)}}</span>
+          <span style="color: rgb(68, 124, 255);">
+            <ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}}</span>
+          <br>
+          <span style="font-weight: bold;">{{waiting(item)}}</span>
+          <span style="color: rgb(253, 174, 4);">
+            <ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span>
+        </div>
+      </button>
+      <ion-item-options  side="right">
+        <button class="create" ion-button color="default" (click)="onEditEvent(item, slidingItem)">{{"texts.Edit" | translate}}</button>
+        <button class="ion-minus-circled" ion-button color="danger" (click)="onDeleteEvent(item, slidingItem)">{{"texts.Delete" | translate}}</button>
+      </ion-item-options>
+    </ion-item-sliding>
   </ion-list>
 </ion-content>

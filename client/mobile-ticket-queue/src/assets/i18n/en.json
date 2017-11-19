@@ -13,6 +13,7 @@
     "Cancel": "Cancel",
     "Close": "Close",
     "Setup": "Setup",
+    "Settings": "Settings",
     "InitTitle": "It's Your first time here?",
     "InitBody": "Please fill out your Name in the settings-panel to connect to the service.",
     "Connect": "Connect",
@@ -28,7 +29,14 @@
     "Invite": "Invite",
     "AdminEvent": "Control Event",
     "OpenInvites": "open invites",
-    "PersonsFor": "Person(s) for"
+    "PersonsFor": "Person(s) for",
+    "CreateEvent": "Create new Event",
+    "EditEvent": "Edit Event {{eventTitle}}",
+    "HowMayPeoplePerIteration": "How many people to invite per one iteration?",
+    "Save": "Save",
+    "EventTitle": "Event-title",
+    "CreateEventBody": "Add/schedule a new Event",
+    "Delete": "Delete"
   },
   "messages": {
     "TicketRegistered": "{{moment}} - Ticket registered",

@@ -20,7 +20,7 @@
       </table>
     </ion-item>
 
-    <ion-item>{{"texts.HowManyInvite" | translate}}<ion-badge item-end>{{eventSummary.event.groupsize}}</ion-badge></ion-item>
+    <ion-item text-wrap>{{"texts.HowManyInvite" | translate}}<ion-badge item-end>{{eventSummary.event.groupsize}}</ion-badge></ion-item>
 
     <ion-item><ion-range #count [(ngModel)]="eventSummary.event.groupsize" min="1" [max]="maxInvites" step="1" snaps="true" color="secondary"></ion-range></ion-item>
 

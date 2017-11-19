@@ -1,0 +1,34 @@
+<ion-header>
+    <ion-navbar>
+        <ion-title *ngIf="event.id === 0">{{"texts.CreateEvent" | translate}}</ion-title>
+        <ion-title *ngIf="event.id > 0">{{"texts.EditEvent" | translate : {'eventTitle': event.eventTitle} }}</ion-title>
+    </ion-navbar>
+</ion-header>
+
+
+<ion-content>
+    <ion-item>
+        <ion-label>{{"texts.EventTitle" | translate}}</ion-label>
+        <ion-input item-end type="text" [(ngModel)]="event.eventTitle"></ion-input>
+    </ion-item>
+    <ion-item>
+        <ion-label>{{"texts.EventDate" | translate}}</ion-label>
+        <ion-input item-end type="date" [(ngModel)]="event.date"></ion-input>
+    </ion-item>
+    <ion-item-divider color="light" >
+        <div text-wrap>{{"texts.HowMayPeoplePerIteration" | translate}}</div>
+        <ion-badge item-end>
+            <h2>{{event.groupsize}}</h2>
+        </ion-badge>
+    </ion-item-divider>
+    <ion-item>
+        <ion-range #count [(ngModel)]="event.groupsize" [min]="1" [max]="30" [step]="1" [snaps]="true" color="secondary"></ion-range>
+    </ion-item>
+    <button *ngIf="event.id === 0" ion-button large block icon-left color="secondary" (click)="createEvent(countModel)"
+    [disabled]="!event.eventTitle || !event.date">
+        <ion-icon name="checkmark-circle"></ion-icon>{{"texts.Save" | translate}}</button>
+    <button *ngIf="event.id > 0" ion-button large block icon-left color="secondary" (click)="updateEvent(countModel)">
+        <ion-icon name="checkmark-circle"></ion-icon>{{"texts.Save" | translate}}</button>
+    <button ion-button large block icon-left color="primary" (click)="popView()">
+        {{"texts.Cancel" | translate}}</button>
+</ion-content>

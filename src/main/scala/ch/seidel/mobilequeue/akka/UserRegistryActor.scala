@@ -14,6 +14,8 @@ import akka.actor.Terminated
 import ch.seidel.mobilequeue.model._
 import ch.seidel.mobilequeue.akka.EventRegistryActor.EventCreated
 import ch.seidel.mobilequeue.akka.EventRegistryActor.ConnectEventUser
+import ch.seidel.mobilequeue.akka.EventRegistryActor.EventUpdated
+import ch.seidel.mobilequeue.akka.EventRegistryActor.EventDeleted
 
 object UserRegistryActor {
   sealed trait UserRegistryMessage
@@ -77,25 +79,25 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
     case Authenticate(name, pw, deviceId) =>
       if (isUnique(name, deviceId)) {
         val withId = createUser(User(0, Set(deviceId), name, pw, "", ""))
-        sender ! ActionPerformed(withId.withHiddenPassword, s"User ${withId.id} authenticated.")
+        sender ! UserAuthenticated(withId.withHiddenPassword, deviceId)
         eventRegistry ! ClientConnected(withId, deviceId, sender)
         println("user created " + withId + " with clientActor " + sender)
       } else {
-        users.keys.filter(u => u.name == name && (u.password == pw || u.deviceIds.contains(deviceId))).headOption match {
+        users.keys.filter(u => u.name == name && ((u.password.nonEmpty && u.password == pw) || u.deviceIds.contains(deviceId))).headOption match {
           case Some(user) =>
             watch(sender)
-            val udr = user.copy(deviceIds = user.deviceIds + deviceId)
+            val udr = user.copy(deviceIds = user.deviceIds + deviceId, password = if (pw.nonEmpty) pw else user.password)
             val newUserSet = users - user + (udr -> (users(user) + sender))
             //            println("new User-set " + newUserSet)
             become(operateWith(newUserSet))
 
             // qualify the acting deviceId to propagate ClientConnected in the system
             val ud = udr.copy(deviceIds = Set(deviceId)).withHiddenPassword
-            sender ! ActionPerformed(ud, s"User ${ud.id} authenticated.")
+            sender ! UserAuthenticated(ud.withHiddenPassword, deviceId)
             eventRegistry ! ClientConnected(ud, deviceId, sender)
             println("user authenticated " + ud + " with clientActor " + sender)
           case _ =>
-            sender ! ActionPerformed(UserDefaults.empty(name), s"User ${name} exists already.")
+            sender ! UserAuthenticationFailed(UserDefaults.empty(name), deviceId, pw == "")
         }
       }
 
@@ -126,6 +128,12 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
       users
         .filter(userToActor => userToActor._1.id == event.userid)
         .flatMap(_._2).foreach(eventRegistry ! ConnectEventUser(event.userid, _))
+    case ec @ EventUpdated(event) =>
+      users
+        .flatMap(_._2).foreach(_ ! ec)
+    case ec @ EventDeleted(id) =>
+      users
+        .flatMap(_._2).foreach(_ ! ec)
 
     // Rest-API
     case GetUsers =>

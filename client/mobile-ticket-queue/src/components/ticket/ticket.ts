@@ -15,6 +15,7 @@ import { TranslateService } from '@ngx-translate/core';
   templateUrl: 'ticket.html'
 })
 export class TicketComponent implements OnInit, OnDestroy {
+  updatedSubsription: Subscription;
 
   ticketSummary: UserTicketSummary;
   lastMessageTitle: string;
@@ -131,7 +132,10 @@ export class TicketComponent implements OnInit, OnDestroy {
     });
     this.summariesSubsription = this.ws.ticketSummaries.filter(filterMyTicketSummaryChannel).subscribe((summary: UserTicketSummary) => {
       this.ticketSummary = summary;
-    });    
+    });
+    this.updatedSubsription = this.ws.eventUpdated.subscribe(updatedEvent => {
+      this.subscribedEvent.description = this.subscribedEvent.ticket.eventid !== updatedEvent.id ? this.subscribedEvent.description : updatedEvent.eventTitle;
+    });
   }
 
   @Input()
@@ -184,6 +188,7 @@ export class TicketComponent implements OnInit, OnDestroy {
       this.closedSubscription.unsubscribe();
       this.expiredSubscription.unsubscribe();
       this.skippedSubscription.unsubscribe();
+      this.updatedSubsription.unsubscribe();
     }
   }
 }

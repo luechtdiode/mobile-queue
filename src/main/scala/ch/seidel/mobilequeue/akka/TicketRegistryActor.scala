@@ -10,6 +10,7 @@ import scala.util.Failure
 import ch.seidel.mobilequeue.model._
 import ch.seidel.mobilequeue.akka.UserRegistryActor.ClientConnected
 import ch.seidel.mobilequeue.akka.EventRegistryActor.ConnectEventUser
+import ch.seidel.mobilequeue.akka.EventRegistryActor.UpdateEvent
 
 object TicketRegistryActor {
   sealed trait TicketRegistryMessage
@@ -52,7 +53,7 @@ object TicketRegistryActor {
   def props(event: Event) = Props(classOf[TicketRegistryActor], event)
 }
 
-class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
+class TicketRegistryActor(var event: Event) extends Actor /*with ActorLogging*/ {
   import TicketRegistryActor._
   import context._
 
@@ -171,6 +172,10 @@ class TicketRegistryActor(event: Event) extends Actor /*with ActorLogging*/ {
           workWith(mapWithNewState(Map(id -> tickets(id)), Closed, tickets))
         case _ =>
       }
+
+    case UpdateEvent(evt) =>
+      event = evt
+      sendTicketsSummaries(tickets)
 
     case connected @ ConnectEventUser(userid, clientActor) =>
       if (userid == event.userid) {

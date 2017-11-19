@@ -22,6 +22,8 @@ import ch.seidel.mobilequeue.akka.UserRegistryActor.{ PropagateTicketIssued, Pro
 import ch.seidel.mobilequeue.http.JsonSupport
 import ch.seidel.mobilequeue.model._
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.EventTicketsSummary
+import ch.seidel.mobilequeue.akka.EventRegistryActor.EventUpdated
+import ch.seidel.mobilequeue.akka.EventRegistryActor.EventDeleted
 
 class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) extends Actor with JsonSupport /*with Hashing*/ {
   import akka.pattern.pipe
@@ -141,6 +143,14 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       val tm = TextMessage(ets.toJson.toJsonStringWithType(ets))
       wsSend.foreach(_ ! tm)
 
+    case ec @ EventUpdated(event) =>
+      val tm = TextMessage(ec.toJson.toJsonStringWithType(ec))
+      wsSend.foreach(_ ! tm)
+
+    case ec @ EventDeleted(id) =>
+      val tm = TextMessage(ec.toJson.toJsonStringWithType(ec))
+      wsSend.foreach(_ ! tm)
+
     case KeepAlive => handleKeepAlive
 
     // handle authenticated messages for other subscriptions and take care of handleStop
@@ -152,18 +162,17 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
    */
   override def receive = {
     // user actions
-    case h @ HelloImOnline(username, deviceId) =>
+    case h @ HelloImOnline(username, password, deviceId) =>
       val di = deviceId.filter(i => i != "").getOrElse(UUID.randomUUID().toString())
-      userRegistryActor ! Authenticate(username, "", di)
+      userRegistryActor ! Authenticate(username, password, di)
 
     // system events
-    case UserActionPerformed(authenticatedUser, reason) =>
-      if (authenticatedUser.deviceIds.isEmpty) {
-        wsSend.foreach(_ ! TextMessage(reason))
-      } else {
-        wsSend.foreach(_ ! TextMessage("deviceId=" + authenticatedUser.deviceIds.headOption.getOrElse("")))
-        become(authenticated(authenticatedUser))
-      }
+    case ua @ UserAuthenticated(authenticatedUser, deviceId) =>
+      wsSend.foreach(_ ! TextMessage(ua.toJson.toJsonStringWithType(ua)))
+      become(authenticated(authenticatedUser))
+
+    case uaf @ UserAuthenticationFailed(authenticatedUser, deviceId, requiresPassword) =>
+      wsSend.foreach(_ ! TextMessage(uaf.toJson.toJsonStringWithType(uaf)));
 
     case ref: ActorRef =>
       wsSend = Some(ref)

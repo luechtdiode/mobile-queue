@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { TicketsService, EventTicketsSummary } from '../../app/tickets.service';
 import { EventAdminPage } from '../eventadmin/eventadmin';
 import { onDeviceUrl, backendUrl } from '../../app/utils';
+import { AddEventPage } from '../addevent/addevent';
 
 @Component({
   selector: 'page-myevents',
@@ -28,6 +29,12 @@ export class MyeventsPage implements OnInit {
         return a.event.eventTitle.localeCompare(b.event.eventTitle);
       });
     });
+    this.ws.eventUpdated.subscribe(updatedEvent => {
+      this.myevents = this.myevents.map(event => event.event.id !== updatedEvent.id ? event : Object.assign({}, event, {event: updatedEvent}));
+    });
+    this.ws.eventDeleted.subscribe(eventid => {
+      this.myevents = this.myevents.filter(event => event.event.id !== eventid);
+    });
   }
 
   onClick(summary: EventTicketsSummary) {
@@ -47,14 +54,22 @@ export class MyeventsPage implements OnInit {
     return summary.invites.filter(item => item.state === 'Issued' || item.state === 'Skipped').reduce((acc, ticket) => acc + ticket.participants, 0);
   }
 
-  createEvent(event: Event) {
-    this.http.post(onDeviceUrl, JSON.stringify(event)).subscribe(
-      (data: Response) => {
-        
-      }, (err) => this.http.get(backendUrl).subscribe(
-        (data: Response) => {
-        
-        }));
+  onCreateNewEvent() {
+    this.navCtrl.push(AddEventPage);
   }
+
+  onEditEvent(summary: EventTicketsSummary, slidingItem) {
+    slidingItem.close();
+    this.navCtrl.push(AddEventPage, {event: summary.event});
+  }
+
+  onDeleteEvent(summary: EventTicketsSummary, slidingItem) {
+    slidingItem.close();
+    this.http.delete(onDeviceUrl + '/' + summary.event.id).subscribe(
+      (data: Response) => {
+      }, (err) => this.http.delete(backendUrl + '/' + summary.event.id).subscribe(
+        (data: Response) => {
+        }));
+  }  
 
 }

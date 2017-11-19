@@ -25,6 +25,7 @@ import { Globalization } from '@ionic-native/globalization';
 import { UsersService } from './users.service';
 import { EventAdminPage } from '../pages/eventadmin/eventadmin';
 import { ProgressBarComponent } from '../components/progressbar/progress-bar';
+import { AddEventPage } from '../pages/addevent/addevent';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -39,7 +40,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     SettingsPage,
     SubscribePage,
     MyeventsPage,
-    EventAdminPage
+    EventAdminPage,
+    AddEventPage
   ],
   imports: [
     BrowserModule,
@@ -61,7 +63,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     SubscribePage,
     SettingsPage,
     MyeventsPage,
-    EventAdminPage
+    EventAdminPage,
+    AddEventPage
   ],
   providers: [
     Globalization,

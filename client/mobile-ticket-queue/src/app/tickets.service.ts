@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 import { formatCurrentMoment } from './utils';
 import { ReplaySubject } from 'rxjs';
+import { User } from './users.service';
 
 
 export interface Event {
@@ -50,12 +51,18 @@ export interface TicketMessage {
   type: string;
 }
 
+export interface UserAuthenticationFailed {
+  user: User;
+  deviceId: String;
+  passwordRequired: boolean;
+}
+
 declare var location: any;
 
 @Injectable()
 export class TicketsService {
   private deviceId;
-  private username;
+  private user = <User>{};
   private identifiedState = false;
   private connectedState = false;
   private websocket: WebSocket;
@@ -78,6 +85,9 @@ export class TicketsService {
   ticketDeleted = new ReplaySubject<TicketMessage>(10);
   ticketSummaries = new ReplaySubject<UserTicketSummary>();
   eventTicketSummaries = new ReplaySubject<EventTicketsSummary>();
+  eventUpdated = new ReplaySubject<Event>();
+  eventDeleted = new ReplaySubject<number>();
+  loginFailed = new ReplaySubject<UserAuthenticationFailed>();
   logMessages = new BehaviorSubject<string>("");
   lastMessages: string[] = [];
 
@@ -105,13 +115,14 @@ export class TicketsService {
     }, this.reconnectInterval);    
   }
 
-  login(username) {
+  login(username, password) {
     if (!this.identifiedState) {
       this.lastMessages = [];
       this.setUsername(username);
       this.sendMessage(JSON.stringify({
         'type': 'HelloImOnline',
         'username': username,
+        'password': password,
         'deviceId': this.deviceId
       }));
     }
@@ -251,7 +262,7 @@ export class TicketsService {
       this.connected.next(this.connectedState);
       var un = this.getUsername();
       if (autologin && this.deviceId && this.deviceId !== '' && !this.identifiedState && un && un !== '') {
-        this.login(this.getUsername());
+        this.login(this.getUsername(), '');
       }
       if (message) {
         this.sendMessage(message);
@@ -351,6 +362,20 @@ export class TicketsService {
         const message = JSON.parse(evt.data);
         const type = message['type'];
         switch (type) {
+          case 'UserAuthenticated':
+            this.setDeviceId(message.deviceId);
+            this.user = message.user;
+            sendMessageAck(evt);
+            break;
+          case 'UserAuthenticationFailed':
+            this.loginFailed.next(message);
+            break;
+          case 'EventUpdated':
+            this.eventUpdated.next(message.event);
+            break;
+          case 'EventDeleted':
+            this.eventDeleted.next(message.id);
+            break;
           case 'TicketIssued':
             this.ticketCreated.next(message);
             break;
@@ -392,7 +417,7 @@ export class TicketsService {
   };
 
   public setUsername(n: string) {
-    this.username = n;
+    this.user.name = n;
     if (typeof (Storage) !== "undefined") {
       localStorage.username = n;
     }
@@ -400,12 +425,16 @@ export class TicketsService {
 
   public getUsername(): string {
     if (typeof (Storage) !== "undefined") {
-      this.username = localStorage.username;
+      this.user.name = localStorage.username;
     }
-    if (!this.username) {
-      this.username = '';
+    if (!this.user.name) {
+      this.user.name = '';
     }
-    return this.username;
+    return this.user.name;
+  }
+
+  public get authenticatedUser(): User {
+    return Object.assign({}, this.user);
   }
 
   private setDeviceId(id: string) {
