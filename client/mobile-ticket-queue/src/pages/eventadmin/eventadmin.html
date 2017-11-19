@@ -1,32 +1,49 @@
 <ion-header>
-  <ion-navbar>
+  <ion-navbar color="primary">
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
     <ion-title>{{'texts.AdminEvent' | translate}}</ion-title>
   </ion-navbar>
 </ion-header>
-    
+
 <ion-content>
   <ion-list>
     <ion-item><h1>{{eventSummary.event.eventTitle}}</h1> {{"texts.At" | translate}} {{eventSummary.event.date}}</ion-item>
+
     <ion-item>{{"texts.HowManyInvite" | translate}}<ion-badge item-end>{{eventSummary.event.groupsize}}</ion-badge></ion-item>
+
     <ion-item><ion-range #count [(ngModel)]="eventSummary.event.groupsize" min="1" [max]="maxInvites" step="1" snaps="true" color="secondary"></ion-range></ion-item>
-    <button class="ion-minus-circled" ion-button block color="secondary" (click)="invite(eventSummary)">{{"texts.Invite" | translate}}</button>
+
     <ion-item>
-    <progress-bar class="top-aligned" [progress]="progress()"></progress-bar>
-    <ion-note item-end>
-        <h1>
-          {{acceptedInvites()}} <ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}},<br>
-        {{openInvites()}} <ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}},<br>
-        {{waiting()}} <ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}
-      </h1>
-    </ion-note>
-  </ion-item>
-    <ion-item *ngFor="let invite of eventSummary.invites">
-      {{invite.participants}} {{"texts.PersonsFor" | translate}} {{username(invite.userid) | async}}
-      <ion-badge *ngIf="invite.state === 'Issued'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
-      <ion-badge *ngIf="invite.state === 'Called'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
-      <ion-badge *ngIf="invite.state === 'Skipped'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
-      <ion-badge *ngIf="invite.state === 'Accepted'" color="secondary" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
-      <ion-badge *ngIf="invite.state === 'Confirmed'" color="secondary" item-end><h1>{{"codes.TicketState." + invite.state | translate}}</h1></ion-badge>
+      <button class="ion-minus-circled" ion-button large block color="secondary" (click)="invite(eventSummary)">{{"texts.Invite" | translate}}</button>
     </ion-item>
+
+    <ion-item>
+      <progress-bar [progress]="progress()"></progress-bar>
+      <div item-end>
+        <span style="font-weight: bold;">{{acceptedInvites()}}</span> <span style="color: rgb(14, 170, 0);"><ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}}</span><br>
+        <span style="font-weight: bold;">{{openInvites()}}</span> <span style="color: rgb(68, 124, 255);"><ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}}</span><br>
+        <span style="font-weight: bold;">{{waiting()}}</span> <span style="color: rgb(253, 174, 4);"><ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span>
+      </div>
+    </ion-item>
+    <ion-item-divider color="light">    </ion-item-divider>
+    
+    <ion-list inline>
+      <ion-item *ngFor="let invite of eventSummary.invites">
+        <ion-avatar item-start class="icon-block">
+         <h1>
+          <ion-icon *ngIf="invite.participants === 1" name="person"></ion-icon>
+          <ion-icon *ngIf="invite.participants > 1" name="people"></ion-icon>
+        </h1>
+        </ion-avatar>
+        {{invite.participants}} {{"texts.PersonsFor" | translate}} {{username(invite.userid) | async}}
+        <ion-badge *ngIf="invite.state === 'Issued'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Called'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Skipped'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Accepted'" color="secondary" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Confirmed'" color="secondary" item-end><h1>{{"codes.TicketState." + invite.state | translate}}</h1></ion-badge>
+      </ion-item>
+    </ion-list>
   </ion-list>
 </ion-content>

@@ -1,0 +1,12 @@
+page-home {
+  .icon-block {
+    display: inline-block;
+    font-size: 35px;
+    vertical-align: -webkit-baseline-middle;
+   }
+   
+  .top-aligned {
+    align-items: flex-start;
+    align-self: flex-start;
+   }
+}

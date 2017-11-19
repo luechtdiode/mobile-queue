@@ -1,36 +1,34 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core';
-import { TicketsService, EventSubscription, UserTicketSummary, TicketMessage, Ticket, EventTicketsSummary } from '../../app/tickets.service';
-import { formatCurrentMoment, onDeviceUrl, backendUrl } from '../../app/utils';
-import { Vibration } from '@ionic-native/vibration';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+// import { BarcodeScanner } from '@ionic-native/barcode-scanner';
+import { TicketsService, EventTicketsSummary } from '../../app/tickets.service';
+import { onDeviceUrl, backendUrl } from '../../app/utils';
 import { Subscription } from 'rxjs';
 import { Observable } from 'rxjs/Observable';
-import { BackgroundMode } from '@ionic-native/background-mode';
-import { LocalNotifications } from '@ionic-native/local-notifications';
-import { Toast } from '@ionic-native/toast';
-import { SubscribePage } from '../../pages/subscribe/subscribe';
-import { Platform, NavParams } from 'ionic-angular';
-import { TranslateService } from 'ng2-translate';
+import { NavParams } from 'ionic-angular';
 import { HttpClient } from '@angular/common/http';
 import { UsersService } from '../../app/users.service';
-import { subscribeOn } from 'rxjs/operator/subscribeOn';
 
 @Component({
   selector: 'page-eventadmin',
   templateUrl: 'eventadmin.html'
 })
 export class EventAdminPage implements OnInit, OnDestroy {
+  tsSubscription: Subscription;
+  
+  barcode: Promise<any>;
   
   private _eventSummary: EventTicketsSummary;
 
-  constructor(private http: HttpClient, private users: UsersService, public navParams: NavParams, public ws: TicketsService) {
+  constructor(private http: HttpClient, private users: UsersService, public navParams: NavParams, 
+    public ws: TicketsService) {
     this.eventSummary = navParams.get('eventSummary');
   }
   
   ngOnDestroy(): void {
-    
+    this.tsSubscription.unsubscribe();
   }
   ngOnInit(): void {
-    this.ws.eventTicketSummaries.subscribe(ets => {
+    this.tsSubscription = this.ws.eventTicketSummaries.subscribe(ets => {
       if (ets.event.id === this.eventSummary.event.id) {
         this.eventSummary = ets;
       }
@@ -48,6 +46,7 @@ export class EventAdminPage implements OnInit, OnDestroy {
         return 0;
       });
     this.maxInvites = summary.event.groupsize * 2
+    // this.barcode = this.barcodeScanner.encode(this.barcodeScanner.Encode.TEXT_TYPE, "mobileticket://events/" + summary.event.id + "/subscribe");
   }
 
   get eventSummary(): EventTicketsSummary {
@@ -69,7 +68,7 @@ export class EventAdminPage implements OnInit, OnDestroy {
   }
 
   waiting() {
-    return this._eventSummary.invites.filter(item => item.state === 'Issued').reduce((acc, ticket) => acc + ticket.participants, 0);
+    return this._eventSummary.invites.filter(item => item.state === 'Issued' || item.state === 'Skipped').reduce((acc, ticket) => acc + ticket.participants, 0);
   }
 
   progress() {

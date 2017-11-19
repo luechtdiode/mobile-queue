@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 import { HttpClient } from '@angular/common/http';
-import { TicketsService, EventTicketsSummary, User } from '../../app/tickets.service';
-import { onDeviceUserUrl, backendUserUrl, onDeviceUrl, backendUrl } from '../../app/utils';
+import { TicketsService, EventTicketsSummary } from '../../app/tickets.service';
 import { EventAdminPage } from '../eventadmin/eventadmin';
+import { onDeviceUrl, backendUrl } from '../../app/utils';
 
 @Component({
   selector: 'page-myevents',
@@ -17,7 +17,6 @@ export class MyeventsPage implements OnInit {
   }
 
   myevents: EventTicketsSummary[] = [];
-  usernames = {};
 
   ionViewDidLoad() {
     console.log('ionViewDidLoad MyeventsPage');
@@ -45,7 +44,7 @@ export class MyeventsPage implements OnInit {
   }
 
   waiting(summary: EventTicketsSummary) {
-    return summary.invites.filter(item => item.state === 'Issued').reduce((acc, ticket) => acc + ticket.participants, 0);
+    return summary.invites.filter(item => item.state === 'Issued' || item.state === 'Skipped').reduce((acc, ticket) => acc + ticket.participants, 0);
   }
 
   createEvent(event: Event) {

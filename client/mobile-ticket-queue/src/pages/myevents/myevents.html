@@ -1,30 +1,24 @@
-<!--
-  Generated template for the MyeventsPage page.
-
-  See http://ionicframework.com/docs/components/#navigation for more info on
-  Ionic pages and navigation.
--->
 <ion-header>
-
-  <ion-navbar>
+  <ion-navbar color="primary">
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
     <ion-title>{{'texts.MyEvents' | translate}}</ion-title>
   </ion-navbar>
-
 </ion-header>
-
 
 <ion-content>
   <ion-list>
     <button ion-item detail-push text-wrap *ngFor="let item of myevents" (click)="onClick(item)">
-      <ion-avatar item-start class="icon-block">
+      <!-- <ion-avatar item-start class="icon-block">
         <img src="assets/imgs/ticket-icon.png">
-      </ion-avatar>
-      <ion-item><h1>{{item.event.eventTitle}}</h1> {{"texts.At" | translate}} {{item.event.date}}</ion-item>
-      <ion-note item-end word-wrap>
-          {{acceptedInvites(item)}} <ion-icon name="thumbs-up"></ion-icon> {{acceptedInvites(item)}} {{"texts.accepted" | translate}},<br>
-          {{openInvites(item)}} <ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}},<br>
-          {{waiting(item)}} <ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}
-      </ion-note>
+      </ion-avatar> -->
+      <h1>{{item.event.eventTitle}}</h1> {{"texts.At" | translate}} {{item.event.date}}
+      <div item-end word-wrap>
+        <span style="font-weight: bold;">{{acceptedInvites(item)}}</span> <span style="color: rgb(14, 170, 0);"><ion-icon name="thumbs-up"></ion-icon> {{"texts.accepted" | translate}}</span><br>
+        <span style="font-weight: bold;">{{openInvites(item)}}</span> <span style="color: rgb(68, 124, 255);"><ion-icon name="megaphone"></ion-icon> {{"texts.OpenInvites" | translate}}</span><br>
+        <span style="font-weight: bold;">{{waiting(item)}}</span> <span style="color: rgb(253, 174, 4);"><ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span>
+      </div>
     </button >
   </ion-list>
 </ion-content>
