@@ -13,15 +13,6 @@ export interface Event {
   groupsize: number;
 }
 
-export interface User {  
-  name: string;
-  deviceIds: string[];
-  id: number;
-  mail: string;
-  mobile: string;
-  password: string;
-}
-
 export interface EventResponse {
   events: Event[];
 }
@@ -67,7 +58,6 @@ export class TicketsService {
   private username;
   private identifiedState = false;
   private connectedState = false;
-  // private tickets: EventSubscription[] = [];
   private websocket: WebSocket;
   private backendUrl: string;
   private reconnectionObservable: Observable<number>;

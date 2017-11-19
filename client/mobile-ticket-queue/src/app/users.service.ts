@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
-import { formatCurrentMoment, onDeviceUserUrl, backendUserUrl } from './utils';
-import { ReplaySubject } from 'rxjs';
+import { onDeviceUserUrl, backendUserUrl } from './utils';
 import { HttpClient } from '@angular/common/http';
 
 

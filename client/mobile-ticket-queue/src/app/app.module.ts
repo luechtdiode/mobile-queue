@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { TranslateLoader, TranslateStaticLoader, TranslateModule, TranslateService } from 'ng2-translate';
+import { TranslateLoader, TranslateStaticLoader, TranslateModule } from 'ng2-translate';
 
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { BackgroundMode } from '@ionic-native/background-mode';
@@ -18,7 +18,6 @@ import { TicketsService } from './tickets.service';
 import { SettingsPage } from '../pages/settings/settings';
 import { TicketComponent } from '../components/ticket/ticket';
 import { SubscribePage } from '../pages/subscribe/subscribe';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { MyeventsPage } from '../pages/myevents/myevents';
 import { Http } from '@angular/http';
 import { Globalization } from '@ionic-native/globalization';
@@ -26,6 +25,7 @@ import { UsersService } from './users.service';
 import { EventAdminPage } from '../pages/eventadmin/eventadmin';
 import { ProgressBarComponent } from '../components/progressbar/progress-bar';
 
+export const createLoader = (http: Http) => new TranslateStaticLoader(http, '/assets/i18n', '.json');
 @NgModule({
   declarations: [
     MyApp,
@@ -43,7 +43,7 @@ import { ProgressBarComponent } from '../components/progressbar/progress-bar';
     IonicModule.forRoot(MyApp),
     TranslateModule.forRoot({
       provide: TranslateLoader,
-      useFactory: (http: Http) => new TranslateStaticLoader(http, '/assets/i18n', '.json'),
+      useFactory: createLoader,
       deps: [Http]
     })
   ],

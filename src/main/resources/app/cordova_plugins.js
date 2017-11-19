@@ -164,7 +164,8 @@ module.exports.metadata =
     "cordova-plugin-camera": "2.4.1",
     "cordova-plugin-image-picker": "1.1.1",
     "cordova-plugin-x-toast": "2.6.0",
-    "cordova-plugin-background-mode": "0.7.2"
+    "cordova-plugin-background-mode": "0.7.2",
+    "cordova-plugin-customurlscheme": "4.3.0"
 }
 // BOTTOM OF METADATA
 });

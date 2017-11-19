@@ -7,7 +7,6 @@ import { Observable } from 'rxjs/Observable';
 import { BackgroundMode } from '@ionic-native/background-mode';
 import { LocalNotifications } from '@ionic-native/local-notifications';
 import { Toast } from '@ionic-native/toast';
-import { SubscribePage } from '../../pages/subscribe/subscribe';
 import { Platform } from 'ionic-angular';
 import { TranslateService } from 'ng2-translate';
 
