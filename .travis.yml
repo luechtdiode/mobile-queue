@@ -57,13 +57,13 @@ script:
   - cd ./client/mobile-ticket-queue
   # install build dependecies
   - npm install
-  - ionic build --prod
 
   # - install plugins etc.
   - ionic cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
   - cordova prepare
 
   # build Android and iOS packages
+  - ionic build --prod
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ionic cordova build android --prod --release ; fi
 
