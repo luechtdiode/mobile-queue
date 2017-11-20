@@ -68,7 +68,7 @@ script:
 
 env:
   global:
-- JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  - JAVA_HOME=/usr/lib/jvm/java-8-oracle
 
 after_success:
   # generate documentation
