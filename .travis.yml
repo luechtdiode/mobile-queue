@@ -53,7 +53,7 @@ before_script:
   # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
 
 script:
-  - cd $HOME/client/mobile-ticket-queue
+  - cd ./client/mobile-ticket-queue
   # install build dependecies
   - npm install
   - ionic build --prod
