@@ -5,6 +5,7 @@ matrix:
     language: android
     android:
       components:
+      - tools
       - platform-tools
       - tools
       - build-tools-26.0.0
@@ -19,10 +20,10 @@ matrix:
         - oracle-java8-set-default
         - npm
         - jq
-    licenses:
-    - android-sdk-preview-license-.+
-    - android-sdk-license-.+
-    - google-gdk-license-.+
+    # licenses:
+    # - android-sdk-preview-license-.+
+    # - android-sdk-license-.+
+    # - google-gdk-license-.+
   - os: osx
     language: objective-c
     osx_image: xcode8.3
@@ -50,7 +51,7 @@ before_install:
 
 before_script:
   # update npm and cordova dependencies
-  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
 
 script:
   - cd ./client/mobile-ticket-queue
