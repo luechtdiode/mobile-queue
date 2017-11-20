@@ -45,16 +45,17 @@ before_install:
       rvm use system ; 
       pod setup ; 
     fi
+  - nvm install 8
 
 before_script:
-  # update npm and bower dependencies
-  - npm install -g cordova ionic
+  # update npm and cordova dependencies
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
+  - cd ./client/mobile-ticket-queue
+  - npm install cordova ionic
+  - cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
 
 script:
   # install build dependecies
-  - cd ./client/mobile-ticket-queue
-  - cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
   - npm install
   - ionic build --prod
 
@@ -64,7 +65,11 @@ script:
   # build Android and iOS packages
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --device --release ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ionic cordova build android --release ; fi
-  
+
+env:
+  global:
+- JAVA_HOME=/usr/lib/jvm/java-8-oracle
+
 after_success:
   # generate documentation
   # - gulp doc
