@@ -45,16 +45,17 @@ before_install:
       rvm use system ; 
       pod setup ; 
     fi
-  - npm install -g npm
 
 before_script:
   # update npm and bower dependencies
-  - cd ./client/mobile-ticket-queue
-  - npm install
+  - npm install -g cordova ionic
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
 
 script:
   # install build dependecies
-  - npm install -g cordova ionic
+  - cd ./client/mobile-ticket-queue
+  - cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
+  - npm install
   - ionic build --prod
 
   # - install plugins etc.
