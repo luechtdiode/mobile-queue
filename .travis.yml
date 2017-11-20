@@ -24,9 +24,9 @@ matrix:
     # - android-sdk-preview-license-.+
     # - android-sdk-license-.+
     # - google-gdk-license-.+
-  - os: osx
-    language: objective-c
-    osx_image: xcode8.3
+  # - os: osx
+  #   language: objective-c
+  #   osx_image: xcode8.3
 
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -77,3 +77,7 @@ after_success:
 
 deploy:
   # deploy build to s3, testflight etc.
+  provider: s3
+  access_key_id: ${env.aws_user}
+  secret_access_key: ${env.aws_accesskey}
+  bucket: "rs-travis"
