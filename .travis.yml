@@ -1,7 +1,7 @@
 matrix:
   include:
   - os: linux
-    sudo: false
+    sudo: true
     language: android
     android:
       components:
@@ -46,13 +46,13 @@ before_install:
       pod setup ; 
     fi
   - nvm install 8
+  - npm install -g cordova ionic
 
 before_script:
   # update npm and cordova dependencies
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
   - cd ./client/mobile-ticket-queue
-  - npm install cordova ionic
-  - cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
+  - ionic cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
 
 script:
   # install build dependecies
@@ -63,8 +63,8 @@ script:
   - cordova prepare
 
   # build Android and iOS packages
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --device --release ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ionic cordova build android --release ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then  --prod --device --release ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ionic cordova build android --prod --release ; fi
 
 env:
   global:
