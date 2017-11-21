@@ -67,7 +67,7 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
       ionic cordova build android --prod --release ; 
-      zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ./platforms/android/build/outputs/apk/release/mbq-release-unsigned-aligned.apk ;
+      ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ./outputs/client/release/mbq-release-unsigned-aligned.apk ;
     fi
 
 env:
@@ -85,6 +85,6 @@ deploy:
   secret_access_key: $aws_accesskey
   region: "eu-west-1"
   bucket: "rs-travis"
-  local_dir: ./platforms/android/build/outputs/apk
-  upload_dir: mobile-ticket-queue/client
+  local_dir: ./outputs
+  upload_dir: mobile-ticket-queue
   skip_cleanup: true
