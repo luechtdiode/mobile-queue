@@ -11,7 +11,7 @@ log.txt
 *.sublime-workspace
 .vscode/
 npm-debug.log*
-
+_.git
 .idea/
 .sourcemaps/
 .sass-cache/
@@ -33,3 +33,5 @@ $RECYCLE.BIN/
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
+/prepareAndroidSigning.cmd
+/mobile-ticket-queue.jks
