@@ -65,7 +65,10 @@ script:
   # build Android and iOS packages
   - ionic build --prod
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ionic cordova build android --prod --release ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+      ionic cordova build android --prod --release ; 
+      zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ./platforms/android/build/outputs/apk/release/mbq-release-unsigned-aligned.apk ;
+    fi
 
 env:
   global:
@@ -76,12 +79,12 @@ after_success:
   # - gulp doc
 
 deploy:
-  # deploy build to s3, testflight etc.
+  # deploy build to s3
   provider: s3
   access_key_id: $aws_user
   secret_access_key: $aws_accesskey
   region: "eu-west-1"
   bucket: "rs-travis"
-  skip_cleanup: true
   local_dir: ./platforms/android/build/outputs/apk
-  # file: output/* /home/travis/build/luechtdiode/mobile-queue/client/mobile-ticket-queue
+  upload_dir: mobile-ticket-queue/client
+  skip_cleanup: true
