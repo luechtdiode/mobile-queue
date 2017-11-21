@@ -66,8 +66,8 @@ class EventRegistryActor extends Actor /*with ActorLogging*/ {
       val oldEvent: Event = events(event.id)
       val existingTicketActor: Option[ActorRef] = ticketsForEventActors.get(oldEvent)
       existingTicketActor.foreach(tickets => {
-        tickets ! UpdateEvent(event)
         become(operateWith(ticketsForEventActors - oldEvent + (event -> tickets), events + (event.id -> event)))
+        tickets ! EventUpdated(event)
         sender() ! ActionPerformed(event, s"Event ${event.id} updated.")
         userRegistryActor.foreach(_ ! EventUpdated(event))
       })
