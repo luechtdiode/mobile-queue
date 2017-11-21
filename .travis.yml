@@ -80,8 +80,8 @@ deploy:
   provider: s3
   access_key_id: $aws_user
   secret_access_key: $aws_accesskey
-  region: "EU"
+  region: "eu-west-1"
   bucket: "rs-travis"
   skip_cleanup: true
-  
+  local_dir: client/mobile-ticket-queue\platforms\android\build\outputs\apk
   # file: output/*
