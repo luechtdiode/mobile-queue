@@ -83,5 +83,5 @@ deploy:
   region: "eu-west-1"
   bucket: "rs-travis"
   skip_cleanup: true
-  local_dir: client/mobile-ticket-queue\platforms\android\build\outputs\apk
-  # file: output/*
+  local_dir: ./platforms/android/build/outputs/apk
+  # file: output/* /home/travis/build/luechtdiode/mobile-queue/client/mobile-ticket-queue
