@@ -52,9 +52,11 @@ before_install:
 before_script:
   # update npm and cordova dependencies
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
+  - cd ./client/mobile-ticket-queue
+  - mkdir -p ./outputs/client/release
+  - mkdir -p ./outputs/server/release
 
 script:
-  - cd ./client/mobile-ticket-queue
   # install build dependecies
   - npm install
 
@@ -66,7 +68,7 @@ script:
   - ionic build --prod
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-      ionic cordova build android --prod --release ; 
+      ionic cordova build android --prod --release ;
       ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ./outputs/client/release/mbq-release-unsigned-aligned.apk ;
     fi
 
