@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="ch.seidel.mobile_ticket_queue" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="GZLJ3PX9ME.ch.seidel.mbq" version="0.0.2" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Mobile Ticket Queue</name>
     <description>issue a ticket and let you trigger by push-notification</description>
     <author email="hi@ionicframework" href="http://interpolar.ch/">Roland Seidel</author>
@@ -90,11 +90,11 @@
     <plugin name="cordova-plugin-image-picker" spec="^1.1.3" />
     <plugin name="cordova-plugin-x-toast" spec="^2.6.0" />
     <plugin name="cordova-plugin-background-mode" spec="0.7.2" />
-    <plugin name="cordova-plugin-globalization" spec="^1.0.8" />
-    <plugin name="cordova-plugin-customurlscheme" spec="https://github.com/EddyVerbruggen/Custom-URL-scheme.git">
+    <plugin name="cordova-plugin-customurlscheme" spec="git+https://github.com/EddyVerbruggen/Custom-URL-scheme.git">
         <variable name="URL_SCHEME" value="mobileticket" />
         <variable name="ANDROID_SCHEME" value=" " />
         <variable name="ANDROID_HOST" value=" " />
         <variable name="ANDROID_PATHPREFIX" value="/" />
     </plugin>
+    <plugin name="cordova-plugin-globalization" spec="^1.0.8" />
 </widget>
