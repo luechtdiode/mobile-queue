@@ -7,6 +7,7 @@ import { Observable } from 'rxjs/Observable';
 import { NavParams } from 'ionic-angular';
 import { HttpClient } from '@angular/common/http';
 import { UsersService } from '../../app/users.service';
+import { HttpHeaders } from '@angular/common/http/src/headers';
 
 @Component({
   selector: 'page-eventadmin',
@@ -87,7 +88,7 @@ export class EventAdminPage implements OnInit, OnDestroy {
   }
 
   invite(event: EventTicketsSummary) {
-    console.log(event);
+    console.log(event);   
     this.http.get(onDeviceUrl + `/${event.event.id}/${event.event.groupsize}`).subscribe(
       (data: Response) => {
         

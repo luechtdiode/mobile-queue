@@ -50,10 +50,15 @@ export interface TicketMessage {
   ticket: Ticket;
   type: string;
 }
+export interface UserAuthentication {
+  user: User;
+  deviceId: string;
+  accesstoken: string;
+}
 
 export interface UserAuthenticationFailed {
   user: User;
-  deviceId: String;
+  deviceId: string;
   passwordRequired: boolean;
 }
 
@@ -363,8 +368,9 @@ export class TicketsService {
         const type = message['type'];
         switch (type) {
           case 'UserAuthenticated':
-            this.setDeviceId(message.deviceId);
+            this.setAccessToken(message.accesstoken);
             this.user = message.user;
+            this.setDeviceId(message.deviceId);
             sendMessageAck(evt);
             break;
           case 'UserAuthenticationFailed':
@@ -435,6 +441,18 @@ export class TicketsService {
 
   public get authenticatedUser(): User {
     return Object.assign({}, this.user);
+  }
+
+  private setAccessToken(token: string) {
+    if (token) {
+      if (typeof (Storage) !== "undefined") {
+        localStorage.accesstoken = token;
+      }
+    }
+  }
+  
+  public get accessToken() {
+    return localStorage.accesstoken;
   }
 
   private setDeviceId(id: string) {

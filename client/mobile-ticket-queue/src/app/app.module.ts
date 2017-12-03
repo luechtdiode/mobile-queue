@@ -3,6 +3,7 @@ import { ErrorHandler, NgModule } from '@angular/core';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { BackgroundMode } from '@ionic-native/background-mode';
@@ -26,6 +27,7 @@ import { UsersService } from './users.service';
 import { EventAdminPage } from '../pages/eventadmin/eventadmin';
 import { ProgressBarComponent } from '../components/progressbar/progress-bar';
 import { AddEventPage } from '../pages/addevent/addevent';
+import { TokenInterceptor } from './token-interceptor';
 
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -76,6 +78,11 @@ export function HttpLoaderFactory(http: HttpClient) {
     BackgroundMode,
     LocalNotifications,
     Toast,
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TokenInterceptor,
+      multi: true
+    },
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
 })

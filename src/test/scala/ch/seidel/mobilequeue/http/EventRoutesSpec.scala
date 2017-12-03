@@ -28,6 +28,7 @@ import ch.seidel.mobilequeue.app.Core._
 class EventRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
     with EventRoutes {
   //#test-top
+  override def authenticated = provide(1L)
 
   lazy val routes = eventRoutes
 

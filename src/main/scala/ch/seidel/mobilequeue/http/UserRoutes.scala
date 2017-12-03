@@ -19,6 +19,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import io.swagger.annotations._
+import authentikat.jwt._
 
 import ch.seidel.mobilequeue.akka.UserRegistryActor._
 import ch.seidel.mobilequeue.model._
@@ -29,7 +30,7 @@ import ch.seidel.mobilequeue.app.Core._
 //#user-routes-class
 @Api(value = "/api/users", produces = "application/json", description = "Operations on users")
 @Path("/api/users")
-trait UserRoutes extends JsonSupport with RouterLogging {
+trait UserRoutes extends JsonSupport with JwtSupport with RouterLogging {
   //#user-routes-class
 
   // Required by the `ask` (?) method below
@@ -66,14 +67,16 @@ trait UserRoutes extends JsonSupport with RouterLogging {
 
   ))
   def addUser = post {
-    pathPrefix("api" / "users") {
-      pathEnd {
-        entity(as[User]) { user =>
-          val userCreated: Future[ActionPerformed] =
-            (userRegistryActor ? CreateUser(user)).mapTo[ActionPerformed]
-          onSuccess(userCreated) { performed =>
-            log.info("Created user [{}]: {}", performed.user, performed.description)
-            complete((StatusCodes.Created, performed))
+    authenticated { userid =>
+      pathPrefix("api" / "users") {
+        pathEnd {
+          entity(as[User]) { user =>
+            val userCreated: Future[ActionPerformed] =
+              (userRegistryActor ? CreateUser(user)).mapTo[ActionPerformed]
+            onSuccess(userCreated) { performed =>
+              log.info("Created user [{}]: {}", performed.user, performed.description)
+              complete((StatusCodes.Created, performed))
+            }
           }
         }
       }
@@ -113,67 +116,19 @@ trait UserRoutes extends JsonSupport with RouterLogging {
   ))
   def deleteUser = delete {
     pathPrefix("api" / "users") {
-      path(LongNumber) { id =>
-        //#users-delete-logic
-        val userDeleted: Future[ActionPerformed] =
-          (userRegistryActor ? DeleteUser(id)).mapTo[ActionPerformed]
-        onSuccess(userDeleted) { performed =>
-          log.info("Deleted user [{}]: {}", id, performed.description)
-          complete((StatusCodes.OK, performed))
+      authenticated { userid =>
+        path(LongNumber) { id =>
+          //#users-delete-logic
+          val userDeleted: Future[ActionPerformed] =
+            (userRegistryActor ? DeleteUser(id)).mapTo[ActionPerformed]
+          onSuccess(userDeleted) { performed =>
+            log.info("Deleted user [{}]: {}", id, performed.description)
+            complete((StatusCodes.OK, performed))
+          }
+          //#users-delete-logic
         }
-        //#users-delete-logic
       }
     }
   }
 
-  //#all-routes
-  //#users-get-post
-  //#users-get-delete   
-  lazy val _userRoutes: Route = {
-    pathPrefix("api" / "users") {
-      //#users-get-delete
-      pathEnd {
-        get {
-          val users: Future[Users] =
-            (userRegistryActor ? GetUsers).mapTo[Users]
-          complete(users)
-        } ~
-          post {
-            entity(as[User]) { user =>
-              val userCreated: Future[ActionPerformed] =
-                (userRegistryActor ? CreateUser(user)).mapTo[ActionPerformed]
-              onSuccess(userCreated) { performed =>
-                log.info("Created user [{}]: {}", performed.user, performed.description)
-                complete((StatusCodes.Created, performed))
-              }
-            }
-          }
-      } ~
-        //#users-get-post
-        //#users-get-delete
-        path(LongNumber) { id =>
-          get {
-            //#retrieve-user-info
-            val maybeUser: Future[Option[User]] =
-              (userRegistryActor ? GetUser(id)).mapTo[Option[User]]
-            rejectEmptyResponse {
-              complete(maybeUser)
-            }
-            //#retrieve-user-info
-          } ~
-            delete {
-              //#users-delete-logic
-              val userDeleted: Future[ActionPerformed] =
-                (userRegistryActor ? DeleteUser(id)).mapTo[ActionPerformed]
-              onSuccess(userDeleted) { performed =>
-                log.info("Deleted user [{}]: {}", id, performed.description)
-                complete((StatusCodes.OK, performed))
-              }
-              //#users-delete-logic
-            }
-        }
-      //#users-get-delete
-    }
-  }
-  //#all-routes
 }

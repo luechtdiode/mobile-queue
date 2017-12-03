@@ -4,12 +4,12 @@ sealed trait MobileTicketQueueProtokoll
 
 sealed trait MobileTicketQueueAction extends MobileTicketQueueProtokoll
 case class HelloImOnline(username: String, password: String, deviceId: Option[String]) extends MobileTicketQueueAction // ->
-case class LogIn(name: String, password: String) extends MobileTicketQueueAction // unused atm
+// case class LogIn(name: String, password: String) extends MobileTicketQueueAction // unused atm
 case class Subscribe(channel: Long, count: Int) extends MobileTicketQueueAction // -> TicketIssued
 case class UnSubscribe(channel: Long) extends MobileTicketQueueAction // -> TicketClosed
 
 sealed trait MobileTicketQueueEvent extends MobileTicketQueueProtokoll
-case class UserAuthenticated(user: User, deviceId: String) extends MobileTicketQueueEvent
+case class UserAuthenticated(user: User, deviceId: String, accesstoken: String) extends MobileTicketQueueEvent
 case class UserAuthenticationFailed(user: User, deviceId: String, passwordRequired: Boolean = false) extends MobileTicketQueueEvent
 case class MessageAck(msg: String) extends MobileTicketQueueEvent
 case class TicketIssued(ticket: Ticket) extends MobileTicketQueueEvent

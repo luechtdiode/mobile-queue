@@ -27,6 +27,9 @@ import ch.seidel.mobilequeue.app.Core._
 @RunWith(classOf[JUnitRunner])
 class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with ScalatestRouteTest
     with UserRoutes {
+
+  override def authenticated = provide(1L)
+
   //#test-top
 
   // Here we need to implement all the abstract members of UserRoutes.

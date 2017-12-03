@@ -1,21 +1,23 @@
 package ch.seidel.mobilequeue.akka
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.actor.Props
-import ch.seidel.mobilequeue.model.Ticket
-import ch.seidel.mobilequeue.model.User
-import ch.seidel.mobilequeue.model.Users
-import ch.seidel.mobilequeue.model.UserDefaults
 import akka.actor.Terminated
+import authentikat.jwt.JsonWebToken
+import authentikat.jwt.JwtHeader
+import authentikat.jwt.JwtClaimsSet
+import ch.seidel.mobilequeue.app.Config
 import ch.seidel.mobilequeue.model._
 import ch.seidel.mobilequeue.akka.EventRegistryActor.EventCreated
 import ch.seidel.mobilequeue.akka.EventRegistryActor.ConnectEventUser
 import ch.seidel.mobilequeue.akka.EventRegistryActor.EventUpdated
 import ch.seidel.mobilequeue.akka.EventRegistryActor.EventDeleted
+import ch.seidel.mobilequeue.http.JwtSupport
 
 object UserRegistryActor {
   sealed trait UserRegistryMessage
@@ -48,12 +50,12 @@ object UserRegistryActor {
   def props(eventRegistry: ActorRef): Props = Props(classOf[UserRegistryActor], eventRegistry)
 }
 
-class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLogging*/ {
+class UserRegistryActor(eventRegistry: ActorRef) extends Actor with JwtSupport with Config /*with ActorLogging*/ {
   import UserRegistryActor._
   import context._
 
   def isUnique(username: String, deviceId: String)(implicit users: Map[User, Set[ActorRef]]) =
-    users.keys.forall(u => u.name != username && !u.deviceIds.contains(deviceId))
+    users.keys.forall(u => !(u.name == username && u.deviceIds.contains(deviceId)))
 
   def createUser(user: User)(implicit users: Map[User, Set[ActorRef]]): User = {
     val withId = user.copy(id = users.keys.foldLeft(0L)((acc, user) => { math.max(user.id, acc) }) + 1L)
@@ -64,7 +66,7 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
     withId
   }
 
-  def forwardToAllClients(userid: Long, message: PropagateTicketMessage)(implicit users: Map[User, Set[ActorRef]]) {
+  def broadcastToAllClients(userid: Long, message: PropagateTicketMessage)(implicit users: Map[User, Set[ActorRef]]) {
     users.filter(u => u._1.id == userid).map(u => {
       //      println("forwarding " + message + " for " + u._1 + " to " + u._2)
       u
@@ -75,11 +77,16 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
     println("operateWith:" + users.map(u => (u._1, u._2.mkString("\n   * ", "\n   * ", ""))).mkString("\n - ", "\n - ", ""))
   }
 
+  def responseWithAccessToken(user: User, deviceId: String): UserAuthenticated = {
+    val claims = setClaims(user.id, jwtTokenExpiryPeriodInDays)
+    UserAuthenticated(user, deviceId, JsonWebToken(jwtHeader, claims, jwtSecretKey))
+  }
+
   def operateWith(implicit users: Map[User, Set[ActorRef]]): Receive = {
     case Authenticate(name, pw, deviceId) =>
       if (isUnique(name, deviceId)) {
         val withId = createUser(User(0, Set(deviceId), name, pw, "", ""))
-        sender ! UserAuthenticated(withId.withHiddenPassword, deviceId)
+        sender ! responseWithAccessToken(withId.withHiddenPassword, deviceId)
         eventRegistry ! ClientConnected(withId, deviceId, sender)
         println("user created " + withId + " with clientActor " + sender)
       } else {
@@ -93,7 +100,7 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
 
             // qualify the acting deviceId to propagate ClientConnected in the system
             val ud = udr.copy(deviceIds = Set(deviceId)).withHiddenPassword
-            sender ! UserAuthenticated(ud.withHiddenPassword, deviceId)
+            sender ! responseWithAccessToken(ud.withHiddenPassword, deviceId)
             eventRegistry ! ClientConnected(ud, deviceId, sender)
             println("user authenticated " + ud + " with clientActor " + sender)
           case _ =>
@@ -117,11 +124,11 @@ class UserRegistryActor(eventRegistry: ActorRef) extends Actor /*with ActorLoggi
         }
 
     // forwarding to all clients of a user      
-    case ti: PropagateTicketIssued => forwardToAllClients(ti.msg.ticket.userid, ti)
-    case ti: PropagateTicketCalled => forwardToAllClients(ti.msg.ticket.userid, ti)
-    case ti: PropagateTicketConfirmed => forwardToAllClients(ti.msg.ticket.userid, ti)
-    case ti: PropagateTicketSkipped => forwardToAllClients(ti.msg.ticket.userid, ti)
-    case ti: PropagateTicketClosed => forwardToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketIssued => broadcastToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketCalled => broadcastToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketConfirmed => broadcastToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketSkipped => broadcastToAllClients(ti.msg.ticket.userid, ti)
+    case ti: PropagateTicketClosed => broadcastToAllClients(ti.msg.ticket.userid, ti)
 
     // connect with actual logged in owner
     case ec @ EventCreated(event) =>

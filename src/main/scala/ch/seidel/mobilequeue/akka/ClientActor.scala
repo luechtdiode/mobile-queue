@@ -167,7 +167,7 @@ class ClientActor(eventRegistryActor: ActorRef, userRegistryActor: ActorRef) ext
       userRegistryActor ! Authenticate(username, password, di)
 
     // system events
-    case ua @ UserAuthenticated(authenticatedUser, deviceId) =>
+    case ua @ UserAuthenticated(authenticatedUser, deviceId, accesstoken) =>
       wsSend.foreach(_ ! TextMessage(ua.toJson.toJsonStringWithType(ua)))
       become(authenticated(authenticatedUser))
 

@@ -34,7 +34,7 @@ trait JsonSupport extends SprayJsonSupport with EnrichedJson {
   implicit val ticketActionPerformedJsonFormat = jsonFormat2(TicketTicketActionPerformed)
 
   implicit val helloFormat = jsonFormat3(HelloImOnline)
-  implicit val userAuthenticatedFormat = jsonFormat2(UserAuthenticated)
+  implicit val userAuthenticatedFormat = jsonFormat3(UserAuthenticated)
   implicit val userAuthenticatedFailedFormat = jsonFormat3(UserAuthenticationFailed)
   implicit val subscribeFormat = jsonFormat2(Subscribe)
   implicit val unsubscribeFormat = jsonFormat1(UnSubscribe)

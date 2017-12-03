@@ -25,7 +25,7 @@ import ch.seidel.mobilequeue.akka.TicketRegistryActor.EventTicketsSummary
 import ch.seidel.mobilequeue.akka.TicketRegistryActor.GetAccepted
 
 //#event-routes-class
-trait EventRoutes extends JsonSupport with RouterLogging {
+trait EventRoutes extends JsonSupport with JwtSupport with RouterLogging {
   //#event-routes-class
 
   // Required by the `ask` (?) method below
@@ -42,8 +42,8 @@ trait EventRoutes extends JsonSupport with RouterLogging {
           val events: Future[Events] =
             (eventRegistryActor ? GetEvents).mapTo[Events]
           complete(events)
-        } ~
-          post {
+        } ~ post {
+          authenticated { userid =>
             entity(as[Event]) { event =>
               val eventCreated: Future[ActionPerformed] =
                 (eventRegistryActor ? CreateEvent(event)).mapTo[ActionPerformed]
@@ -53,6 +53,7 @@ trait EventRoutes extends JsonSupport with RouterLogging {
               }
             }
           }
+        }
 
       } ~
         //#events-get-post
@@ -67,8 +68,8 @@ trait EventRoutes extends JsonSupport with RouterLogging {
                 complete(maybeEvent)
               }
               //#retrieve-event-info
-            } ~
-              delete {
+            } ~ delete {
+              authenticated { userid =>
                 //#events-delete-logic
                 val eventDeleted: Future[ActionPerformed] =
                   (eventRegistryActor ? DeleteEvent(id)).mapTo[ActionPerformed]
@@ -77,8 +78,9 @@ trait EventRoutes extends JsonSupport with RouterLogging {
                   complete((StatusCodes.OK, performed))
                 }
                 //#events-delete-logic
-              } ~
-              put {
+              }
+            } ~ put {
+              authenticated { userid =>
                 entity(as[Event]) { event =>
                   val eventCreated: Future[ActionPerformed] =
                     (eventRegistryActor ? UpdateEvent(event)).mapTo[ActionPerformed]
@@ -89,6 +91,7 @@ trait EventRoutes extends JsonSupport with RouterLogging {
                   //#events-put-logic
                 }
               }
+            }
           }
         } ~
         path(LongNumber / "accepted") { id =>
@@ -103,10 +106,19 @@ trait EventRoutes extends JsonSupport with RouterLogging {
         path(LongNumber / IntNumber) { (id, cnt) =>
           pathEnd {
             get {
-              val maybeEvent: Future[EventTicketsSummary] =
-                (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[EventTicketsSummary]
-              rejectEmptyResponse {
-                complete(maybeEvent)
+              authenticated { userid =>
+                val maybeEvent: Future[EventTicketsSummary] = {
+                  for {
+                    fo <- (eventRegistryActor ? GetEvent(id)).mapTo[Option[Event]]
+                    if (fo.forall(_.userid == userid))
+                    s <- (eventRegistryActor ? GetNextEventTickets(id, cnt)).mapTo[EventTicketsSummary]
+                  } yield {
+                    s
+                  }
+                }
+                rejectEmptyResponse {
+                  complete(maybeEvent)
+                }
               }
             }
           }
