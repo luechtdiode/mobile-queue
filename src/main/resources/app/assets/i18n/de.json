@@ -37,7 +37,9 @@
     "EventTitle": "Veranstaltungs-Titel",
     "EventDate": "Datum der Veranstaltung",
     "CreateEventBody": "Füge eine Veranstaltung hinzu",
-    "Delete": "Löschen"
+    "Delete": "Löschen",
+    "OfflineUsers": "Offline Benutzer",
+    "OnlineUsers": "Online Benutzer"
   },
   "messages": {
     "TicketRegistered": "{{moment}} - Ticket registriert",
@@ -65,7 +67,7 @@
     "TicketState": {
       "Requested": "Angefragt",
       "Issued": "Ausgestellt",
-      "Called": "Abgerufen",
+      "Called": "Eingeladen",
       "Confirmed": "Bestätigt",
       "Skipped": "Ausgelassen",
       "Closed": "Geschlossen"

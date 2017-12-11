@@ -26,7 +26,7 @@ object TicketRegistryActor {
   final case class OwnerEventDeleted(event: Event) extends TicketRegistryEvent
   final case class ActionPerformed(ticket: Ticket, description: String) extends TicketRegistryEvent
   final case class TicketCreated(ticket: TicketIssued, requestingClient: ActorRef) extends TicketRegistryEvent
-  final case class EventTicketsSummary(event: Event, invites: Iterable[Ticket]) extends TicketRegistryEvent {
+  final case class EventTicketsSummary(event: Event, invites: Iterable[Ticket], offline: Iterable[Ticket]) extends TicketRegistryEvent {
     private lazy val waiting = invites.filter(t => t.state match { case Issued => true case Called => true case Skipped => true case _ => false })
     private lazy val waitingCnt = waiting.map(_.participants).sum
     private lazy val calledCnt = invites.filter(t => t.state match { case Confirmed => true case Called => true case Skipped => true case _ => false }).map(_.participants).sum
@@ -89,7 +89,7 @@ class TicketRegistryActor(var event: Event) extends Actor /*with ActorLogging*/ 
   }
 
   def sendTicketsSummaries(tickets: Map[Long, TicketClientHolder]) = {
-    val ts = EventTicketsSummary(event, tickets.values.map(_.ticket))
+    val ts = EventTicketsSummary(event, tickets.values.filter(_.clients.nonEmpty).map(_.ticket), tickets.values.filter(_.clients.isEmpty).map(_.ticket))
     eventOwner.foreach(_ ! ts)
     tickets.values.foreach(_.sendSummaryToClient(ts))
     ts
@@ -117,7 +117,11 @@ class TicketRegistryActor(var event: Event) extends Actor /*with ActorLogging*/ 
       sender ! workWith(newTicketCollection)
 
     case GetAccepted =>
-      sender ! EventTicketsSummary(event, tickets.values.map(_.ticket).filter(t => t.state match { case Confirmed => true case Called => true case _ => false }))
+      sender ! EventTicketsSummary(
+        event,
+        tickets.values.filter(_.clients.nonEmpty).map(_.ticket).filter(t => t.state match { case Confirmed => true case Called => true case _ => false }),
+        tickets.values.filter(_.clients.isEmpty).map(_.ticket)
+      )
 
     case TicketConfirmed(ticket) =>
       workWith(mapWithNewState(Map(ticket.id -> tickets(ticket.id)), Confirmed, tickets))
@@ -181,14 +185,14 @@ class TicketRegistryActor(var event: Event) extends Actor /*with ActorLogging*/ 
       if (userid == event.userid) {
         watch(clientActor)
         eventOwner = Some(clientActor)
-        clientActor ! EventTicketsSummary(event, tickets.values.map(_.ticket))
+        clientActor ! EventTicketsSummary(event, tickets.values.filter(_.clients.nonEmpty).map(_.ticket), tickets.values.filter(_.clients.isEmpty).map(_.ticket))
       }
 
     case connected @ ClientConnected(user, _, clientActor) =>
       if (user.id == event.userid) {
         watch(clientActor)
         eventOwner = Some(clientActor)
-        clientActor ! EventTicketsSummary(event, tickets.values.map(_.ticket))
+        clientActor ! EventTicketsSummary(event, tickets.values.filter(_.clients.nonEmpty).map(_.ticket), tickets.values.filter(_.clients.isEmpty).map(_.ticket))
       }
       val selectedTickets = tickets
         .map(_._2)

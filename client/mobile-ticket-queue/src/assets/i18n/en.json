@@ -36,7 +36,9 @@
     "Save": "Save",
     "EventTitle": "Event-title",
     "CreateEventBody": "Add/schedule a new Event",
-    "Delete": "Delete"
+    "Delete": "Delete",
+    "OfflineUsers": "Offline User",
+    "OnlineUsers": "Online User"
   },
   "messages": {
     "TicketRegistered": "{{moment}} - Ticket registered",

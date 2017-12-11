@@ -36,10 +36,26 @@
         <span style="font-weight: bold;">{{waiting()}}</span> <span style="color: rgb(253, 174, 4);"><ion-icon name="pause"></ion-icon> {{"texts.waiting" | translate}}</span>
       </div>
     </ion-item>
-    <ion-item-divider color="light">    </ion-item-divider>
-    
+    <ion-item-divider color="light">{{"texts.OnlineUsers" | translate}}</ion-item-divider>
+    <ion-item *ngIf="!eventSummary.invites.length">...</ion-item>
     <ion-list inline>
       <ion-item *ngFor="let invite of eventSummary.invites">
+        <ion-avatar item-start class="icon-block">
+         <h1>
+          <ion-icon *ngIf="invite.participants === 1" name="person"></ion-icon>
+          <ion-icon *ngIf="invite.participants > 1" name="people"></ion-icon>
+        </h1>
+        </ion-avatar>
+        {{invite.participants}} {{"texts.PersonsFor" | translate}} {{username(invite.userid) | async}}
+        <ion-badge *ngIf="invite.state === 'Issued'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Called'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Skipped'" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Accepted'" color="secondary" item-end>{{"codes.TicketState." + invite.state | translate}}</ion-badge>
+        <ion-badge *ngIf="invite.state === 'Confirmed'" color="secondary" item-end><h1>{{"codes.TicketState." + invite.state | translate}}</h1></ion-badge>
+      </ion-item>
+      <ion-item-divider color="light">{{"texts.OfflineUsers" | translate}}</ion-item-divider>
+      <ion-item *ngIf="!eventSummary.offline.length">...</ion-item>
+      <ion-item *ngFor="let invite of eventSummary.offline">
         <ion-avatar item-start class="icon-block">
          <h1>
           <ion-icon *ngIf="invite.participants === 1" name="person"></ion-icon>

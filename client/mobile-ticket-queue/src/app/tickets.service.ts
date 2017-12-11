@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 import { formatCurrentMoment } from './utils';
-import { ReplaySubject } from 'rxjs';
+import { ReplaySubject, Subject } from 'rxjs';
 import { User } from './users.service';
 
 
@@ -43,6 +43,7 @@ export interface UserTicketSummary {
 export interface EventTicketsSummary {
   event: Event;
   invites: Ticket[];
+  offline: Ticket[];
   type?: string;
 }
 
@@ -81,18 +82,18 @@ export class TicketsService {
 
   connected = new BehaviorSubject<boolean>(false);
   identified = new BehaviorSubject<boolean>(false);
-  ticketCreated = new ReplaySubject<TicketMessage>(10);
-  ticketActivated = new ReplaySubject<TicketMessage>(10);
-  ticketCalled = new ReplaySubject<TicketMessage>(10);
-  ticketAccepted = new ReplaySubject<TicketMessage>(10);
-  ticketSkipped = new ReplaySubject<TicketMessage>(10);
-  ticketExpired = new ReplaySubject<TicketMessage>(10);
-  ticketDeleted = new ReplaySubject<TicketMessage>(10);
-  ticketSummaries = new ReplaySubject<UserTicketSummary>();
-  eventTicketSummaries = new ReplaySubject<EventTicketsSummary>();
-  eventUpdated = new ReplaySubject<Event>();
-  eventDeleted = new ReplaySubject<number>();
-  loginFailed = new ReplaySubject<UserAuthenticationFailed>();
+  ticketCreated = new Subject<TicketMessage>();
+  ticketActivated = new Subject<TicketMessage>();
+  ticketCalled = new Subject<TicketMessage>();
+  ticketAccepted = new Subject<TicketMessage>();
+  ticketSkipped = new Subject<TicketMessage>();
+  ticketExpired = new Subject<TicketMessage>();
+  ticketDeleted = new Subject<TicketMessage>();
+  ticketSummaries = new ReplaySubject<UserTicketSummary>(1);
+  eventTicketSummaries = new ReplaySubject<EventTicketsSummary>(1);
+  eventUpdated = new Subject<Event>();
+  eventDeleted = new Subject<number>();
+  loginFailed = new Subject<UserAuthenticationFailed>();
   logMessages = new BehaviorSubject<string>("");
   lastMessages: string[] = [];
 
