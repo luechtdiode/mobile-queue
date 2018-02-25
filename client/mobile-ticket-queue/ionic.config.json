@@ -1,6 +1,6 @@
 {
   "name": "mobile-ticket-queue",
-  "app_id": "ch.seidel.mobile_ticket_queue",
+  "app_id": "28ddd39b",
   "type": "ionic-angular",
   "integrations": {
     "cordova": {}
@@ -8,7 +8,7 @@
   "proxies": [
     {
       "path": "/api",
-      "proxyUrl2": "https://38qniweusmuwjkbr.myfritz.net/mbq/api",
+      "proxyUrl2": "https://mbq.sharevic.net/api",
       "proxyUrl": "http://localhost:8080/api"
     }
   ]
