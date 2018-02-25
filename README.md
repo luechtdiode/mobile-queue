@@ -6,7 +6,7 @@ Digital and mobile queue for events, which allows the interested parties to shar
 
 # Support as Tester
 ## Try as Android-Device Tester and download Alpha-Version from Play-Store
-[Mobile Ticket Queue (alhpa testversion) on Google Play-Store](https://play.google.com/store/apps/details?id=ch.seidel.mobile_ticket_queue&rdid=ch.seidel.mobile_ticket_queue)
+[Mobile Ticket Queue (alpha testversion) on Google Play-Store](https://play.google.com/store/apps/details?id=ch.seidel.mobile_ticket_queue&rdid=ch.seidel.mobile_ticket_queue)
 
 ## Try as Tester with Browser-Client
 [Mobile Ticket Queue as Browser App](https://38qniweusmuwjkbr.myfritz.net/mbq/)
@@ -22,17 +22,17 @@ Feel free to translate the i18n-Files by forking this repo and publish a pull-re
 ## Entities
 Entity | Description
 -|-
-User | A User is identified primarly by his used device's deviceid. He can have more than one deviceid, but then he should use a password. Actually, we just want to kwnow his username.
+User | A User is identified primarily by his used device's id. He can have more than one device-id, but then he should use a password. Actually, we just want to know his username.
 Event | A Event represents a digital counter-desk for somewhat-ever kindful thing. On that digital counter-desk, User can issue tickets to be invited in the correct order of issuance.
 Ticket | A Ticket represents the promise to be called, when the ticket-holders turn will start.
-Client | A Client is the physical connection to the User's device. If the user is online, he has always a Client per used device as companion. If the User uses two or more Clients, such as a Mobile-Device and a Tablet-Device at the same time, there will be two Clients instatiated. All messages from and to the user go through his device's Client. Also, all messages are propagated to all Clients of the user.
+Client | A Client is the physical connection to the User's device. If the user is online, he has always a Client per used device as companion. If the User uses two or more Clients, such as a Mobile-Device and a Tablet-Device at the same time, there will be two Clients instantiated. All messages from and to the user go through his device's Client. Also, all messages are propagated to all Clients of the user.
 ## State-Handling
 As it's a kind of QCRS-Application, new state comes from Events/Actions and is propagated to all subscribers
 ### Backend-State
 * No persistence (atm),
-* Per Entity a Akka-Actor (Event => EventRegistryActor), could be regional sharded (scaling)
+* Per Entity a Akka-Actor (Event => EventRegistryActor), could be regional shared (scaling)
 * Hierarchical Supervision (EventRegistryActor owns per Event a TicketRegistryActor)
-* Beyond, the UserRegistryActor as root-actor (could be outplaced or connected with a external user-servie)
+* Beyond, the UserRegistryActor as root-actor (could be outplaced or connected with a external user-service)
 * As Facade per Websocket-Connection exists a ClientActor.
 ### Client-State
 * HTML5-LocalStore to remember Device-ID and Username
