@@ -9,7 +9,7 @@ Digital and mobile queue for events, which allows the interested parties to shar
 [Mobile Ticket Queue (alpha testversion) on Google Play-Store](https://play.google.com/store/apps/details?id=ch.seidel.mobile_ticket_queue&rdid=ch.seidel.mobile_ticket_queue)
 
 ## Try as Tester with Browser-Client
-[Mobile Ticket Queue as Browser App](https://38qniweusmuwjkbr.myfritz.net/mbq/)
+[Mobile Ticket Queue as Browser App](https://mbq.sharevic.net/)
 
 # Support for Translations
 Feel free to translate the i18n-Files by forking this repo and publish a pull-request.

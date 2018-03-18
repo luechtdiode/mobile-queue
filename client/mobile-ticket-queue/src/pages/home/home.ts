@@ -5,9 +5,9 @@ import { NavController } from 'ionic-angular';
 import { AlertController, Platform } from 'ionic-angular';
 
 import { TicketsService, EventSubscription, Ticket, Event, EventResponse, TicketMessage } from '../../app/tickets.service';
-import { Observable } from 'rxjs/Observable';
 import { SettingsPage } from '../settings/settings';
 import { SubscribePage } from '../subscribe/subscribe';
+import { Observable } from 'rxjs/Observable';
 import { Subscription } from 'rxjs';
 import { BackgroundMode } from '@ionic-native/background-mode';
 import { TranslateService } from '@ngx-translate/core';

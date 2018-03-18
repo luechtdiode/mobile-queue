@@ -16,7 +16,7 @@ lazy val root = (project in file(".")).
       licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
       scalaVersion    := "2.12.3"
     )),
-    name := "mobmomy",
+    name := "mbq",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http"            % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
