@@ -1,8 +1,8 @@
 matrix:
   include:
-  - os: linux
+  - language: android
+    os: linux
     sudo: true
-    language: android
     android:
       components:
       - tools
@@ -20,57 +20,56 @@ matrix:
         - oracle-java8-set-default
         - npm
         - jq
-    # licenses:
-    # - android-sdk-preview-license-.+
-    # - android-sdk-license-.+
-    # - google-gdk-license-.+
-  # - os: osx
-  #   language: objective-c
-  #   osx_image: xcode8.3
+    before_install:
+      - export LANG=en_US.UTF-8
+      - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; 
+          brew install npm ios-sim jq ios-deploy cocoapods ; 
+          rvm use system ; 
+          pod setup ; 
+        fi
+      - nvm install 8
+      - npm install -g cordova ionic
+    script:
+      # install build dependecies
+      - cd $HOME/client/mobile-ticket-queue
+      - npm install
+
+      # - install plugins etc.
+      - ionic cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
+      - cordova prepare
+
+      # build Android and iOS packages
+      - ionic build --prod
+      - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
+      - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+          ionic cordova build android --prod --release ;
+          ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ../../outputs/client/release/mbq-release-unsigned-aligned.apk ;
+        fi
+      - cp -r ./www $HOME/src/main/resources/app
+  - language: scala
+    os: linux
+    script:
+      - cd $HOME
+      - sbt build assembly
+      - cp -r $HOME/target $HOME/outputs/server/release
 
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-- rm -f  $HOME/.gradle/caches/transforms-1/transforms-1.lock
+- rm -rf $HOME/.gradle/caches/transforms*/
 - rm -rf $HOME/.gradle/caches/3.5/fileHashes/
 - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
+# - rm -f  $HOME/.gradle/caches/transforms-1/transforms-1.lock
 
 cache:
   directories:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install:
-  - export LANG=en_US.UTF-8
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; 
-      brew install npm ios-sim jq ios-deploy cocoapods ; 
-      rvm use system ; 
-      pod setup ; 
-    fi
-  - nvm install 8
-  - npm install -g cordova ionic
-
 before_script:
   # update npm and cordova dependencies
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
-  - cd ./client/mobile-ticket-queue
   - mkdir -p ./outputs/client/release
   - mkdir -p ./outputs/server/release
-
-script:
-  # install build dependecies
-  - npm install
-
-  # - install plugins etc.
-  - ionic cordova plugin add https://github.com/EddyVerbruggen/Custom-URL-scheme.git --variable URL_SCHEME=mobileticket
-  - cordova prepare
-
-  # build Android and iOS packages
-  - ionic build --prod
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-      ionic cordova build android --prod --release ;
-      ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ./outputs/client/release/mbq-release-unsigned-aligned.apk ;
-    fi
 
 env:
   global:

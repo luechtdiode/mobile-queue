@@ -73,7 +73,7 @@ export class MyApp {
       this.updateMenuWithCurrentLang();
       this.splashScreen.hide();
       if (this.platform.is('cordova')) {
-        this.localNotifications.registerPermission();
+        this.localNotifications.requestPermission();
       }
     });
   }
