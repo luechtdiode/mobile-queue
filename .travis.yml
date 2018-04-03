@@ -1,6 +1,11 @@
-matrix:
+stages:
+  - client
+  - server
+
+jobs:
   include:
-  - language: android
+  - stage: client
+    language: android
     os: linux
     sudo: true
     android:
@@ -31,7 +36,7 @@ matrix:
       - npm install -g cordova ionic
     script:
       # install build dependecies
-      - cd $HOME/client/mobile-ticket-queue
+      - cd $TRAVIS_BUILD_DIR/client/mobile-ticket-queue
       - npm install
 
       # - install plugins etc.
@@ -46,12 +51,13 @@ matrix:
           ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 ./platforms/android/build/outputs/apk/release/android-release-unsigned.apk ../../outputs/client/release/mbq-release-unsigned-aligned.apk ;
         fi
       - cp -r ./www $HOME/src/main/resources/app
-  - language: scala
+  - stage: server
+    language: scala
     os: linux
     script:
-      - cd $HOME
+      - cd $TRAVIS_BUILD_DIR
       - sbt build assembly
-      - cp -r $HOME/target $HOME/outputs/server/release
+      - cp -r $TRAVIS_BUILD_DIR/target $HOME/outputs/server/release
 
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
