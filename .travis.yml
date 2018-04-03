@@ -57,7 +57,7 @@ jobs:
     script:
       - cd $TRAVIS_BUILD_DIR
       - sbt assembly
-      - cp -f $TRAVIS_BUILD_DIR/target/scala*/*.jar $HOME/outputs/server/release
+      - cp -f $TRAVIS_BUILD_DIR/target/scala*/*.jar $TRAVIS_BUILD_DIR/outputs/server/release
 
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -74,8 +74,8 @@ cache:
 before_script:
   # update npm and cordova dependencies
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./travis/addkeys.sh ; fi
-  - mkdir -p ./outputs/client/release
-  - mkdir -p ./outputs/server/release
+  - mkdir -p $TRAVIS_BUILD_DIR/outputs/client/release
+  - mkdir -p $TRAVIS_BUILD_DIR/outputs/server/release
 
 env:
   global:
@@ -92,6 +92,6 @@ deploy:
   secret_access_key: $aws_accesskey
   region: "eu-west-1"
   bucket: "rs-travis"
-  local_dir: ./outputs
+  local_dir: $TRAVIS_BUILD_DIR/outputs
   upload_dir: mobile-ticket-queue
   skip_cleanup: true
