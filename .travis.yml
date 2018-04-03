@@ -48,7 +48,7 @@ jobs:
       - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
       - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
           ionic cordova build android --prod --release ;
-          ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/release/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
+          ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
         fi
       - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
   - stage: server
