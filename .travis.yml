@@ -96,8 +96,9 @@ env:
   # include $HOME/.local/bin for `aws`
   - PATH=$HOME/.local/bin:$PATH
   - S3_BUCKET_CACHE=s3://rs-travis/mobile-ticket-queue/build-cache
-  - access_key_id=$aws_user
-  - secret_access_key=$aws_accesskey
+  - aws_default_region=eu-west-1
+  - aws_access_key_id=$aws_user
+  - aws_secret_access_key=$aws_accesskey
 
 deploy:
   # deploy build to s3
