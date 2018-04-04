@@ -35,8 +35,6 @@ jobs:
       - nvm install 8
       - npm install -g cordova ionic
       - pip install --user awscli
-      - export access_key_id=$aws_user
-      - export secret_access_key=$aws_accesskey
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
     script:
@@ -63,8 +61,6 @@ jobs:
     os: linux
     before_install:
       - pip install --user awscli
-      - export access_key_id=$aws_user
-      - export secret_access_key=$aws_accesskey
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
     script:
@@ -100,6 +96,8 @@ env:
   # include $HOME/.local/bin for `aws`
   - PATH=$HOME/.local/bin:$PATH
   - S3_BUCKET_CACHE=s3://rs-travis/mobile-ticket-queue/build-cache
+  - access_key_id=$aws_user
+  - secret_access_key=$aws_accesskey
 
 deploy:
   # deploy build to s3
