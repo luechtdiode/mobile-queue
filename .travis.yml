@@ -2,12 +2,6 @@ stages:
   - client
   - server
 
-before_install:
-  - pip install --user awscli
-  - ./ecr_credentials.sh
-  - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-  - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
-
 jobs:
   include:
   - stage: client
@@ -40,6 +34,11 @@ jobs:
         fi
       - nvm install 8
       - npm install -g cordova ionic
+      - pip install --user awscli
+      - export access_key_id=$aws_user
+      - export secret_access_key=$aws_accesskey
+      - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+      - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
     script:
       # install build dependecies
       - cd $TRAVIS_BUILD_DIR/client/mobile-ticket-queue
@@ -56,11 +55,18 @@ jobs:
           ionic cordova build android --prod --release ;
           ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
         fi
-      - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/www
-      # - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
+      - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/
+    after_success:
+      - aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER      # - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
   - stage: server
     language: scala
     os: linux
+    before_install:
+      - pip install --user awscli
+      - export access_key_id=$aws_user
+      - export secret_access_key=$aws_accesskey
+      - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+      - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
     script:
       - cd $TRAVIS_BUILD_DIR
       - cat ~/$TRAVIS_BUILD_NUMBER/*
@@ -94,11 +100,6 @@ env:
   # include $HOME/.local/bin for `aws`
   - PATH=$HOME/.local/bin:$PATH
   - S3_BUCKET_CACHE=s3://rs-travis/mobile-ticket-queue/build-cache
-
-after_success:
- - aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER
-  # generate documentation
-  # - gulp doc
 
 deploy:
   # deploy build to s3
