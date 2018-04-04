@@ -2,6 +2,12 @@ stages:
   - client
   - server
 
+before_install:
+  - pip install --user awscli
+  - ./ecr_credentials.sh
+  - mkdir -p ~/$TRAVIS_BUILD_NUMBER
+  - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+
 jobs:
   include:
   - stage: client
@@ -50,21 +56,26 @@ jobs:
           ionic cordova build android --prod --release ;
           ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
         fi
-      - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
+      - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/www
+      # - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
   - stage: server
     language: scala
     os: linux
     script:
       - cd $TRAVIS_BUILD_DIR
+      - cat ~/$TRAVIS_BUILD_NUMBER/*
+      - cp -R -f ~/$TRAVIS_BUILD_NUMBER/www $TRAVIS_BUILD_DIR/src/main/resources/app
       - sbt assembly
       - cp -f $TRAVIS_BUILD_DIR/target/scala*/*.jar $TRAVIS_BUILD_DIR/outputs/server/release
+    after_success:
+      - aws s3 rm --recursive $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER # clean up after ourselves
+
 
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -rf $HOME/.gradle/caches/transforms*/
 - rm -rf $HOME/.gradle/caches/3.5/fileHashes/
 - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
-# - rm -f  $HOME/.gradle/caches/transforms-1/transforms-1.lock
 
 cache:
   directories:
@@ -80,13 +91,18 @@ before_script:
 env:
   global:
   - JAVA_HOME=/usr/lib/jvm/java-8-oracle
+  # include $HOME/.local/bin for `aws`
+  - PATH=$HOME/.local/bin:$PATH
+  - S3_BUCKET_CACHE=s3://rs-travis/mobile-ticket-queue/build-cache
 
 after_success:
+ - aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER
   # generate documentation
   # - gulp doc
 
 deploy:
   # deploy build to s3
+  # s3-eu-west-1.amazonaws.com/rs-travis/mobile-ticket-queue
   provider: s3
   access_key_id: $aws_user
   secret_access_key: $aws_accesskey
