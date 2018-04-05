@@ -38,6 +38,8 @@ jobs:
       - ./ecr_credentials.sh
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+      - mkdir -p ~/requisites
+      - aws s3 sync S3_BUCKET_REQUISITES ~/requisites
     script:
       # install build dependecies
       - cd $TRAVIS_BUILD_DIR/client/mobile-ticket-queue
@@ -52,9 +54,11 @@ jobs:
       - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
       - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
           ionic cordova build android --prod --release ;
-          ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
+          cp ./platforms/android/build/outputs/apk/android-release.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release.apk ;
+          # ${ANDROID_HOME}/build-tools/26.0.2/zipalign -v -p 4 $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release-unsigned.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release-unsigned-aligned.apk ;
         fi
       - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/
+      - rm -rf ~/requisites
     after_success:
       - aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER      # - cp -R -f ./www $TRAVIS_BUILD_DIR/src/main/resources/app
   - stage: server
@@ -67,7 +71,7 @@ jobs:
       - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
     script:
       - cd $TRAVIS_BUILD_DIR
-      - cp -R -f ~/$TRAVIS_BUILD_NUMBER/www $TRAVIS_BUILD_DIR/src/main/resources/app
+      - cp -R -f ~/$TRAVIS_BUILD_NUMBER/www/* $TRAVIS_BUILD_DIR/src/main/resources/app
       - sbt assembly
       - cp -f $TRAVIS_BUILD_DIR/target/scala*/*.jar $TRAVIS_BUILD_DIR/outputs/server/release
     after_success:
@@ -97,6 +101,7 @@ env:
   # include $HOME/.local/bin for `aws`
   - PATH=$HOME/.local/bin:$PATH
   - S3_BUCKET_CACHE=s3://rs-travis/mobile-ticket-queue/build-cache
+  - S3_BUCKET_REQUISITES=s3://rs-travis/mobile-ticket-queue/requisites
 
 deploy:
   # deploy build to s3
