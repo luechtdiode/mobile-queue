@@ -39,7 +39,7 @@ jobs:
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
       - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
       - mkdir -p ~/requisites
-      - aws s3 sync S3_BUCKET_REQUISITES ~/requisites
+      - aws s3 sync $S3_BUCKET_REQUISITES ~/requisites
     script:
       # install build dependecies
       - cd $TRAVIS_BUILD_DIR/client/mobile-ticket-queue
