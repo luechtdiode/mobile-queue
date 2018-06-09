@@ -7,7 +7,6 @@ import { Observable } from 'rxjs/Observable';
 import { NavParams } from 'ionic-angular';
 import { HttpClient } from '@angular/common/http';
 import { UsersService } from '../../app/users.service';
-import { HttpHeaders } from '@angular/common/http/src/headers';
 
 @Component({
   selector: 'page-eventadmin',
