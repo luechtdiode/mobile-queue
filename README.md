@@ -27,7 +27,7 @@ Event | A Event represents a digital counter-desk for somewhat-ever kindful thin
 Ticket | A Ticket represents the promise to be called, when the ticket-holders turn will start.
 Client | A Client is the physical connection to the User's device. If the user is online, he has always a Client per used device as companion. If the User uses two or more Clients, such as a Mobile-Device and a Tablet-Device at the same time, there will be two Clients instantiated. All messages from and to the user go through his device's Client. Also, all messages are propagated to all Clients of the user.
 ## State-Handling
-As it's a kind of QCRS-Application, new state comes from Events/Actions and is propagated to all subscribers
+As it's a kind of CQRS-Application, new state comes from Events/Actions and is propagated to all subscribers
 ### Backend-State
 * No persistence (atm),
 * Per Entity a Akka-Actor (Event => EventRegistryActor), could be regional shared (scaling)
