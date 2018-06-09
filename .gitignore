@@ -6,3 +6,4 @@
 /.cache-tests
 /log/
 /scala
+client/mobile-ticket-queue/build.json
