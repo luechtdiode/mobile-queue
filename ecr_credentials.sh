@@ -13,6 +13,13 @@ EOL
 
 cat > client/mobile-ticket-queue/build.json << EOL
 {
+  "buildscript": {
+      "repositories": {
+          "maven": {
+              "url": "https://maven.google.com"
+          }
+      }
+  },
   "android": {
       "release": {
           "keystore": "~/requisites/mobile-ticket-queue.jks",
