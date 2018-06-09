@@ -59,9 +59,7 @@ jobs:
       - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/
       - rm -rf ~/requisites
     after_success:
-      - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then 
-          aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ;
-        fi
+      - aws s3 sync ~/$TRAVIS_BUILD_NUMBER $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER
   - stage: server
     language: scala
     os: linux
@@ -69,18 +67,15 @@ jobs:
       - pip install --user awscli
       - ./ecr_credentials.sh
       - mkdir -p ~/$TRAVIS_BUILD_NUMBER
-      - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then 
-          aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER ;
-        fi
+      - aws s3 sync $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ~/$TRAVIS_BUILD_NUMBER
+
     script:
       - cd $TRAVIS_BUILD_DIR
       - cp -R -f ~/$TRAVIS_BUILD_NUMBER/www/* $TRAVIS_BUILD_DIR/src/main/resources/app
       - sbt assembly
       - cp -f $TRAVIS_BUILD_DIR/target/scala*/*.jar $TRAVIS_BUILD_DIR/outputs/server/release
     after_success:
-      - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then 
-          aws s3 rm --recursive $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER ; # clean up after ourselves
-        fi
+      - aws s3 rm --recursive $S3_BUCKET_CACHE/$TRAVIS_BUILD_NUMBER # clean up after ourselves
 
 
 before_cache:
