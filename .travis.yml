@@ -54,7 +54,8 @@ jobs:
       - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then ionic cordova build ios --prod --device --release ; fi
       - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
           ionic cordova build android --prod --release ;
-          cp $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/android-release.apk $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release.apk ;
+          cp $TRAVIS_BUILD_DIR/client/mobile-ticket-queue/platforms/android/build/outputs/apk/release/android-release.apk 
+             $TRAVIS_BUILD_DIR/outputs/client/release/mbq-release.apk ;
         fi
       - cp -R -f ./www ~/$TRAVIS_BUILD_NUMBER/
       - rm -rf ~/requisites
