@@ -35,3 +35,8 @@ Thumbs.db
 UserInterfaceState.xcuserstate
 /prepareAndroidSigning.cmd
 /mobile-ticket-queue.jks
+/*backup/
+outputs
+build.json
+*.cmd
+*.sh

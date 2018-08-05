@@ -4,6 +4,7 @@
 /.cache-main
 /.classpath
 /.cache-tests
+test/
 /log/
 /scala
 /certs

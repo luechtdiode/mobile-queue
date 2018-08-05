@@ -1,10 +1,10 @@
 {
   "name": "mobile-ticket-queue",
-  "app_id": "28ddd39b",
-  "type": "ionic-angular",
   "integrations": {
     "cordova": {}
   },
+  "pro_id": "28ddd39b",
+  "type": "ionic-angular",
   "proxies": [
     {
       "path": "/api",
