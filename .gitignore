@@ -6,4 +6,11 @@
 /.cache-tests
 /log/
 /scala
+/certs
 client/mobile-ticket-queue/build.json
+/.ensime
+/.ensime_cache
+/.history
+*.log
+*.apk
+*.cer
