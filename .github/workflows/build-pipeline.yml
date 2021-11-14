@@ -27,7 +27,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-          cache: ivy
       - name: Coursier cache
         uses: coursier/cache-action@v6
       - name: SBT Build
