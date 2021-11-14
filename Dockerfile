@@ -1,10 +1,10 @@
-FROM openjdk:9-jre-slim
+FROM openjdk:11-jre-slim
 
 WORKDIR /mobile-queue
 
-COPY *.jar /mobile-queue/
+COPY target/scala-2.12/*.jar /mobile-queue/app.jar
 
 #Ports
 EXPOSE 8080
 
-CMD java -jar mobile-queue-assembly-0.1.jar
+CMD java -jar app.jar

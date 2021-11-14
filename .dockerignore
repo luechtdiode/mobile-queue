@@ -1,0 +1,5 @@
+# exclude everything
+*
+
+# includes (negation of excludes)
+!target/scala-2.12/*.jar
