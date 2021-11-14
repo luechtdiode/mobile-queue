@@ -66,7 +66,7 @@ jobs:
           password: ${{ secrets.DOCKER_ACCESSTOKEN }}
       - name: Build, Tag & Push Dockerfile
         run: |
-          docker build ./mobile-queue -t luechtdiode/mobile-queue:latest
+          docker build -t luechtdiode/mobile-queue:latest .
           docker tag luechtdiode/mobile-queue:latest luechtdiode/mobile-queue:$TAG
           docker push luechtdiode/mobile-queue:latest
           docker push luechtdiode/mobile-queue:$TAG
