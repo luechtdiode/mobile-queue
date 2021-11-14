@@ -15,3 +15,6 @@ client/mobile-ticket-queue/build.json
 *.log
 *.apk
 *.cer
+/.idea
+/.project
+/.settings
